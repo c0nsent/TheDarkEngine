@@ -12,6 +12,7 @@ find_package(glfw3 3.5 REQUIRED)
 find_package(glm REQUIRED)
 
 add_subdirectory(third-party/glad)
+add_subdirectory(glow)
 
 find_path(STB_INCLUDE_DIR
         NAMES stb_image.h
@@ -25,7 +26,10 @@ endif()
 add_library(stb INTERFACE)
 target_include_directories(stb INTERFACE ${STB_INCLUDE_DIR})
 
-add_executable(${PROJECT_NAME} main.cc)
+add_executable(
+        ${PROJECT_NAME}
+        main.cc
+)
 
 file(GLOB_RECURSE SHADER_FILES "shaders/*")
 add_custom_command(
@@ -55,4 +59,5 @@ target_link_libraries(${PROJECT_NAME}
         glm::glm
         stb
         glad
+        glow
 )
