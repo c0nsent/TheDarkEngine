@@ -85,18 +85,22 @@ namespace glow
 		{
 			const isize infoLogLength{getInfoLogLength()};
 
-			if (infoLogLength == 0) return std::nullopt;
+			std::string infoLog(static_cast<usize>(infoLogLength), '\0');
+			GLsizei written{getInfoLogLength()};
+			infoLog.resize(static_cast<usize>(written));
 
-			char infoLog[infoLogLength];
-			glGetShaderInfoLog(m_id, infoLogLength, nullptr, infoLog);
-
-			return std::string{infoLog};
+			return infoLog;
 		}
 
 
-		auto BaseShader::deleteShader() const noexcept -> void
+		auto BaseShader::markForDeletion() const noexcept -> bool
 		{
 			glDeleteShader(m_id);
+
+			GLint isFlaggedForDeletion{};
+			glGetShaderiv(m_id, std::to_underlying(InfoType::DeleteStatus), &isFlaggedForDeletion);
+
+			return glIsShader(m_id) || (isFlaggedForDeletion != GL_TRUE);
 		}
 
 
@@ -108,8 +112,7 @@ namespace glow
 		}
 
 
-		BaseShader::BaseShader(BaseShader &&rhs) noexcept
-			: BaseShader{}
+		BaseShader::BaseShader(BaseShader &&rhs) noexcept : BaseShader{}
 		{
 			swap(*this, rhs);
 		}
@@ -125,18 +128,16 @@ namespace glow
 
 		BaseShader::~BaseShader()
 		{
-			if (m_id != NONE) deleteShader();
+			if (m_id != NONE) glDeleteShader(m_id);
 		}
 
+		BaseShader::BaseShader() noexcept : m_id{NONE}{}
 
 		BaseShader::BaseShader(const ShaderType type) noexcept
 			: m_id{glCreateShader(std::to_underlying(type))}
 		{
 		}
 	}
-
-
-	VertexShader::VertexShader() noexcept : BaseShader{} {}
 
 
 	VertexShader::VertexShader(const char *srcPath)
@@ -146,17 +147,11 @@ namespace glow
 	}
 
 
-	FragmentShader::FragmentShader() noexcept : BaseShader{} {}
-
-
 	FragmentShader::FragmentShader(const char *srcPath)
 		: BaseShader{ShaderType::Fragment}
 	{
 		compile(srcPath);
 	}
-
-
-	GeometryShader::GeometryShader() noexcept : BaseShader{} {}
 
 
 	GeometryShader::GeometryShader(const char *srcPath)
