@@ -9,6 +9,7 @@ set(CMAKE_CXX_STANDARD 23)
 add_library(glow SHARED
         basic-types.hpp
         shader.cc shader.hpp
+        shader-program.cc shader-program.hpp
 )
 
 target_link_libraries(glow PUBLIC

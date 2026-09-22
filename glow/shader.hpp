@@ -46,7 +46,7 @@ namespace glow
 			[[nodiscard]] auto isExists() const noexcept -> bool;
 			[[nodiscard]] auto getId() const noexcept -> u32;
 			[[nodiscard]] auto getInfoLog() const -> std::optional<std::string>;
-			[[maybe_unused]] auto markForDeletion() const noexcept -> bool;
+			void markForDeletion() const noexcept;
 
 			static void swap(BaseShader &lhs, BaseShader &rhs ) noexcept;
 
@@ -79,7 +79,7 @@ namespace glow
 	class FragmentShader final : public detail::BaseShader
 	{
 	public:
-
+		FragmentShader() noexcept;
 		explicit FragmentShader(const char *srcPath);
 	};
 
@@ -87,6 +87,8 @@ namespace glow
 	class GeometryShader final : public detail::BaseShader
 	{
 	public:
+		GeometryShader() noexcept;
+
 		explicit GeometryShader(const char *srcPath);
 	};
 }
