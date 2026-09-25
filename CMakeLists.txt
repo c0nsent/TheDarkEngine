@@ -31,11 +31,12 @@ add_executable(
         main.cc
 )
 
-file(GLOB_RECURSE SHADER_FILES "shaders/*")
+file(GLOB_RECURSE SHADER_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/shaders/*")
 add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/shaders_stamp
         DEPENDS ${SHADER_FILES}
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/shaders $<TARGET_FILE_DIR:${PROJECT_NAME}>/shaders
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/shaders $<TARGET_FILE_DIR:${PROJECT_NAME}>/shaders
         COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_BINARY_DIR}/shaders_stamp
         COMMENT "Копирование шейдеров при изменении"
 )
@@ -47,7 +48,8 @@ file(GLOB_RECURSE TEXTURE_FILES "textures/*")
 add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/textures_stamp
         DEPENDS ${TEXTURE_FILES}
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/textures $<TARGET_FILE_DIR:${PROJECT_NAME}>/textures
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/textures $<TARGET_FILE_DIR:${PROJECT_NAME}>/textures
         COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_BINARY_DIR}/textures_stamp
         COMMENT "Копирование текстур при изменении"
 )

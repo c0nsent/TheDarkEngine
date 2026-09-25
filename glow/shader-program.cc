@@ -37,16 +37,17 @@ namespace glow
 
 		glLinkProgram(m_id);
 
-		if (isLinked()) return;
-
-		auto log{getInfoLog().value_or("No Log")};
-		throw std::runtime_error{"Failed to link shader program: " + std::move(log)};
+		if (not isLinked())
+		{
+			throw std::runtime_error{"Failed to link shader program: " + getInfoLog().value_or("No Log")};
+		}
 	}
 
-	ShaderProgram::~ShaderProgram()
+
+	/*ShaderProgram::~ShaderProgram()
 	{
 		glDeleteProgram(m_id);
-	}
+	}*/
 
 
 	auto ShaderProgram::getId() const noexcept -> u32
@@ -80,17 +81,17 @@ namespace glow
 	}
 
 
-	template<class T> requires std::derived_from<T, detail::BaseShader>
+	template<class ShaderType> requires std::derived_from<ShaderType, detail::BaseShader>
 	auto ShaderProgram::hasAttachedShader() const noexcept  -> bool
 	{
-		return std::get<T>(m_shaders).isExists();
+		return std::get<ShaderType>(m_shaders).isExists();
 	}
 
 
-	template<class T> requires std::derived_from<T, detail::BaseShader>
-	auto ShaderProgram::getAttachedShader() const noexcept -> T &
+	template<class ShaderType> requires std::derived_from<ShaderType, detail::BaseShader>
+	auto ShaderProgram::getAttachedShader() const noexcept -> const ShaderType &
 	{
-		return std::get<T>(m_shaders);
+		return std::get<ShaderType>(m_shaders);
 	}
 
 

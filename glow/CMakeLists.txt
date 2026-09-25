@@ -10,8 +10,9 @@ add_library(glow SHARED
         basic-types.hpp
         shader.cc shader.hpp
         shader-program.cc shader-program.hpp
+        error.cc error.hpp
 )
 
-target_link_libraries(glow PUBLIC
+target_link_libraries(glow PRIVATE
         glad
 )

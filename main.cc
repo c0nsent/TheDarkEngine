@@ -1,163 +1,208 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
+#include <stb/stb_image.h>
+#include <glm/vec4.hpp>
 
 #include "glow/basic-types.hpp"
+#include "glow/error.hpp"
+//#include "glow/screen-cleaner.hpp"
 #include "glow/shader-program.hpp"
-using namespace glow::basicTypes;
 #include "glow/shader.hpp"
+//#include "glow/utility.hpp"
+//#include "glow/uniform.hpp"
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-
+#include <array>
 #include <iostream>
 
 
-constexpr u32 WIDTH = 800;
-constexpr u32 HEIGHT = 600;
+using namespace glow::basicTypes;
+
+constexpr i32 WIDTH{800};
+constexpr i32 HEIGHT{600};
+constexpr auto TITLE{"The Dark Engine"};
+
 
 auto errorCallback(const i32 error, const char *description) -> void
 {
-    std::cerr << "Error: " << error << " " << description << std::endl;
+	std::cerr << "Error: " << error << " " << description << std::endl;
 }
 
 
 auto framebufferSizeCallback(GLFWwindow *, const i32 width, const i32 height) -> void
 {
-    glViewport(0, 0, width, height);
+	glViewport(0, 0, width, height);
 }
-
-
 
 
 auto processInput(GLFWwindow *window) -> void
 {
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, GLFW_TRUE);
+	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+		glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
 
 
 static auto createTexture(const char *path) -> u32
 {
-    u32 textureId;
-    glGenTextures(1, &textureId);
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, textureId);
+	u32 textureId;
+	glGenTextures(1, &textureId);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, textureId);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    i32 width, height, nrChannels;
-    u8 *imageData{stbi_load(path, &width, &height, &nrChannels, 0)};
+	i32 width, height, nrChannels;
+	u8 *imageData{stbi_load(path, &width, &height, &nrChannels, 0)};
 
-    const i32 format{nrChannels == 3 ? GL_RGB : GL_RGBA};
+	const i32 format{nrChannels == 3 ? GL_RGB : GL_RGBA};
 
-    if (not imageData)
-        throw std::runtime_error{"Failed to load image\n"};
+	if (not imageData)
+		throw std::runtime_error{"Failed to load image\n"};
 
-    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, imageData);
-    glGenerateMipmap(GL_TEXTURE_2D);
+	glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, imageData);
+	glGenerateMipmap(GL_TEXTURE_2D);
 
-    stbi_image_free(imageData);
+	stbi_image_free(imageData);
 
-    return textureId;
+	return textureId;
 }
 
-int main()
+
+auto main() -> int
 {
-    glfwInit();
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwSetErrorCallback(errorCallback);
 
-    auto *window = glfwCreateWindow(WIDTH, HEIGHT, "The Dark Engine", nullptr, nullptr);
-    if (not window)
-    {
-        std::cerr << "Failed to create a window" << std::endl;
-        glfwTerminate();
-        return EXIT_FAILURE;
-    }
-    glfwMakeContextCurrent(window);
-    glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
+	if (not glfwInit())
+	{
+		std::cerr << "Failed to initialize GLFW\n";
+		return 1;
+	}
 
-    gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress));
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    glow::ShaderProgram shaderProgram{std::make_tuple(
-        glow::VertexShader{"shaders/shader.vert"},
-        glow::FragmentShader{/*"fragment.fs"*/},
-        glow::GeometryShader{}
-    )};
+	GLFWwindow *window{glfwCreateWindow(WIDTH, HEIGHT, TITLE, nullptr, nullptr)};
+	if (window == nullptr)
+	{
+		std::cerr << "Failed to create window\n";
+		glfwTerminate();
+		return 1;
+	}
 
-    constexpr auto vertices { std::to_array<f32>({
-        0.5f,  0.5f, 0.0f,   1.0f, 1.0f, // top right
-        0.5f, -0.5f, 0.0f,   1.0f, 0.0f, // bottom right
-        -0.5f, -0.5f, 0.0f,   0.0f, 0.0f, // bottom left
-        -0.5f,  0.5f, 0.0f,   0.0f, 1.0f  //
-    })};
+	glfwMakeContextCurrent(window);
+	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
-    constexpr auto indices { std::to_array<i32>({
-        0, 1, 3, // first triangle
-        1, 2, 3  // second triangle
-    })};
+	if (not gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
+	{
+		std::cerr << "Failed to initialize GLAD.\n";
+		return 1;
+	}
 
-    u32 vbo, vao, ebo;
-    glGenVertexArrays(1, &vao);
-    glGenBuffers(1, &vbo);
-    glGenBuffers(1, &ebo);
+	const glow::ShaderProgram shaderProgram{std::make_tuple(
+		glow::VertexShader{"shaders/shader.vert"},
+		glow::FragmentShader{"shaders/shader.frag"},
+		glow::GeometryShader{}
+	)};
 
-    glBindVertexArray(vao);
+	constexpr auto vertices{ std::to_array<f32>({
+		 0.5f,  0.5f, 0.0f,		1.0f, 0.0f, 0.0f,	1.0f, 1.0f,
+		 0.5f, -0.5f, 0.0f,		0.0f, 1.0f, 0.0f,	1.0f, 0.0f,
+		-0.5f, -0.5f, 0.0f,		0.0f, 0.0f, 1.0f,	0.0f, 0.0f,
+		-0.5f,  0.5f, 0.0f,		1.0f, 1.0f, 0.0f,	0.0f, 1.0f,
+	})};
 
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices.data(), GL_STATIC_DRAW);
+	constexpr auto indices{ std::to_array<u32>({
+		0, 1, 3,
+		1, 2, 3,
+	})};
 
-    glVertexAttribPointer(
-        0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(f32), static_cast<void*>(nullptr));
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(f32), reinterpret_cast<void*>(3 * sizeof(f32)));
-    glEnableVertexAttribArray(1);
+	stbi_set_flip_vertically_on_load(true);
 
-    const auto texture1{ createTexture("textures/obama.png") };
-    const auto texture2 {createTexture("textures/container.png")};
+    glow::Error::printIfError();
 
-    shaderProgram.use();
+	//const auto containerTexture{createTexture("textures/container.png")};
+	const auto obamaTexture{createTexture("textures/obama.png")};
 
-    glUniform1i(glGetUniformLocation(shaderProgram.getId(), "texture1"), 0);
-    glUniform1i(glGetUniformLocation(shaderProgram.getId(), "texture2"), 1);
+    glow::Error::printIfError();
 
-    while (not glfwWindowShouldClose(window))
-    {
-        processInput(window);
+	u32 vbo, vao, ebo;
+	glGenBuffers(1, &vbo);
+	glGenBuffers(1, &ebo);
+	glGenVertexArrays(1, &vao);
 
-        glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
+    glow::Error::printIfError();
 
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, texture1);
-        glActiveTexture(GL_TEXTURE1);
-        glBindTexture(GL_TEXTURE_2D, texture2);
+	glBindVertexArray(vao);
 
-        glm::mat4 transform = glm::mat4(1.0f);
-        transform = glm::translate(transform, glm::vec3(0.5f, -0.5f, 0.0f));
-        transform = glm::rotate(transform, static_cast<float>(glfwGetTime()), glm::vec3(0.f, 0.f, 1.f));
+    glow::Error::printIfError();
 
-        shaderProgram.use();
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glNamedBufferData(vbo, vertices.size() * sizeof(vertices.front()), vertices.data(), GL_STATIC_DRAW);
 
-        glBindVertexArray(vao);
-        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+    glow::Error::printIfError();
 
-        glfwSwapBuffers(window);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+	glNamedBufferData(ebo, indices.size() * sizeof(indices.front()), indices.data(), GL_STATIC_DRAW);
 
-        glfwPollEvents();
-    }
+    glow::Error::printIfError();
 
-    /*glDeleteVertexArrays(1, &vao);
-    glDeleteBuffers(1, &vbo);
-    glDeleteBuffers(1, &ebo);*/
+	glVertexAttribPointer(0, 3, GL_FLOAT, false, 8 * sizeof(indices.front()), reinterpret_cast<void *>(0));
+	glEnableVertexAttribArray(0);
 
-    glfwTerminate();
+    glow::Error::printIfError();
+
+	glVertexAttribPointer(1, 3, GL_FLOAT, false, 8 * sizeof(indices.front()), reinterpret_cast<void*>(3 * sizeof(indices.front())));
+	glEnableVertexAttribArray(1);
+
+    glow::Error::printIfError();
+
+	glVertexAttribPointer(2, 2, GL_FLOAT, false, 8 * sizeof(indices.front()), reinterpret_cast<void *>(6 * sizeof(indices.front())));
+	glEnableVertexAttribArray(2);
+
+	shaderProgram.use();
+	glUniform1i(glGetUniformLocation(shaderProgram.getId(), "texture1"), 0);
+    //glUniform1i(glGetUniformLocation(shaderProgram.getId(), "texture2"), 1);
+
+
+    //f32 opacity1{1}, opacity2{0.1};
+
+
+
+	while (not glfwWindowShouldClose(window))
+	{
+		processInput(window);
+
+		glClearColor(0.2f, 0.3f, 0.3f, 1.f);
+		glClear(GL_COLOR_BUFFER_BIT);
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, obamaTexture);/*
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, obamaTexture);*/
+
+		shaderProgram.use();
+		glBindVertexArray(vao);
+		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+
+		glow::Error::printIfError();
+
+		glfwSwapBuffers(window);
+		glfwPollEvents();
+	}
+
+	glDeleteProgram(shaderProgram.getId());
+	glDeleteVertexArrays(1, &vao);
+	glDeleteBuffers(1, &vbo);
+	glDeleteBuffers(1, &ebo);
+
+
+
+
+	glfwDestroyWindow(window);
+	glfwTerminate();
 }

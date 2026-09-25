@@ -38,7 +38,7 @@ namespace glow
 		explicit ShaderProgram(Shaders &&shaders);
 		//ShaderProgram(const char *vertexPath, const char *fragmentShader);
 
-		~ShaderProgram();
+		//~ShaderProgram();
 
 		ShaderProgram() = delete;
 		ShaderProgram(const ShaderProgram &) = delete;
@@ -54,7 +54,7 @@ namespace glow
 		[[nodiscard]] auto hasAttachedShader() const noexcept -> bool;
 
 		template<class ShaderType> requires std::derived_from<ShaderType, detail::BaseShader>
-		[[nodiscard]] auto getAttachedShader() const noexcept -> ShaderType &;
+		[[nodiscard]] auto getAttachedShader() const noexcept ->  const ShaderType &;
 
 	    //[[nodiscard]] auto getUniform1f(const char *name) const noexcept -> Uniform1f;
 

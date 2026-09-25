@@ -124,10 +124,10 @@ namespace glow
 		}
 
 
-		BaseShader::~BaseShader()
+		/*BaseShader::~BaseShader()
 		{
 			if (m_id != NONE) glDeleteShader(m_id);
-		}
+		}*/
 
 		BaseShader::BaseShader() noexcept : m_id{NONE}{}
 

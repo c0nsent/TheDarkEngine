@@ -53,7 +53,7 @@ namespace glow
 			BaseShader(BaseShader &&rhs) noexcept;
 			auto operator=(BaseShader &&rhs) noexcept -> BaseShader &;
 
-			~BaseShader();
+			//~BaseShader();
 
 			BaseShader(const BaseShader &) = delete;
 			BaseShader &operator=(const BaseShader &) = delete;
