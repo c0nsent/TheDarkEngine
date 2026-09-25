@@ -2,7 +2,9 @@
 #include <GLFW/glfw3.h>
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
-#include <glm/vec4.hpp>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include "glow/basic-types.hpp"
 #include "glow/error.hpp"
@@ -23,19 +25,19 @@ constexpr i32 HEIGHT{600};
 constexpr auto TITLE{"The Dark Engine"};
 
 
-auto errorCallback(const i32 error, const char *description) -> void
+static void errorCallback(const i32 error, const char *description)
 {
 	std::cerr << "Error: " << error << " " << description << std::endl;
 }
 
 
-auto framebufferSizeCallback(GLFWwindow *, const i32 width, const i32 height) -> void
+static void framebufferSizeCallback(GLFWwindow *, const i32 width, const i32 height)
 {
 	glViewport(0, 0, width, height);
 }
 
 
-auto processInput(GLFWwindow *window) -> void
+static void processInput(GLFWwindow *window)
 {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GLFW_TRUE);
@@ -110,10 +112,10 @@ auto main() -> int
 	)};
 
 	constexpr auto vertices{ std::to_array<f32>({
-		 0.5f,  0.5f, 0.0f,		1.0f, 0.0f, 0.0f,	1.0f, 1.0f,
-		 0.5f, -0.5f, 0.0f,		0.0f, 1.0f, 0.0f,	1.0f, 0.0f,
-		-0.5f, -0.5f, 0.0f,		0.0f, 0.0f, 1.0f,	0.0f, 0.0f,
-		-0.5f,  0.5f, 0.0f,		1.0f, 1.0f, 0.0f,	0.0f, 1.0f,
+		 0.5f,  0.5f, 0.0f, 1.0f, 1.0f,
+		 0.5f, -0.5f, 0.0f,	1.0f, 0.0f,
+		-0.5f, -0.5f, 0.0f,	0.0f, 0.0f,
+		-0.5f,  0.5f, 0.0f,	0.0f, 1.0f,
 	})};
 
 	constexpr auto indices{ std::to_array<u32>({
@@ -125,7 +127,6 @@ auto main() -> int
 
     glow::Error::printIfError();
 
-	//const auto containerTexture{createTexture("textures/container.png")};
 	const auto obamaTexture{createTexture("textures/obama.png")};
 
     glow::Error::printIfError();
@@ -166,12 +167,6 @@ auto main() -> int
 
 	shaderProgram.use();
 	glUniform1i(glGetUniformLocation(shaderProgram.getId(), "texture1"), 0);
-    //glUniform1i(glGetUniformLocation(shaderProgram.getId(), "texture2"), 1);
-
-
-    //f32 opacity1{1}, opacity2{0.1};
-
-
 
 	while (not glfwWindowShouldClose(window))
 	{
@@ -180,10 +175,15 @@ auto main() -> int
 		glClearColor(0.2f, 0.3f, 0.3f, 1.f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
+		glm::mat4 trans{ 1.f };
+		trans = glm::rotate(trans, glm::radians(90.f), glm::vec3(0.f, 0.f, 1.f));
+		trans = glm::scale(trans, glm::vec3{ 0.5, 0.5, 0.5 });
+
+		const auto transLoc= glGetUniformLocation(shaderProgram.getId(), "transform");
+		glUniformMatrix4fv(transLoc, 1, GL_FALSE, glm::value_ptr(trans));
+
 		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, obamaTexture);/*
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, obamaTexture);*/
+		glBindTexture(GL_TEXTURE_2D, obamaTexture);
 
 		shaderProgram.use();
 		glBindVertexArray(vao);
@@ -199,9 +199,6 @@ auto main() -> int
 	glDeleteVertexArrays(1, &vao);
 	glDeleteBuffers(1, &vbo);
 	glDeleteBuffers(1, &ebo);
-
-
-
 
 	glfwDestroyWindow(window);
 	glfwTerminate();
