@@ -152,18 +152,15 @@ auto main() -> int
 
     glow::Error::printIfError();
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, false, 8 * sizeof(indices.front()), reinterpret_cast<void *>(0));
+	glVertexAttribPointer(0, 3, GL_FLOAT, false, 5 * sizeof(indices.front()), reinterpret_cast<void *>(0));
 	glEnableVertexAttribArray(0);
 
     glow::Error::printIfError();
 
-	glVertexAttribPointer(1, 3, GL_FLOAT, false, 8 * sizeof(indices.front()), reinterpret_cast<void*>(3 * sizeof(indices.front())));
+	glVertexAttribPointer(1, 2, GL_FLOAT, false, 5 * sizeof(indices.front()), reinterpret_cast<void*>(3 * sizeof(indices.front())));
 	glEnableVertexAttribArray(1);
 
     glow::Error::printIfError();
-
-	glVertexAttribPointer(2, 2, GL_FLOAT, false, 8 * sizeof(indices.front()), reinterpret_cast<void *>(6 * sizeof(indices.front())));
-	glEnableVertexAttribArray(2);
 
 	shaderProgram.use();
 	glUniform1i(glGetUniformLocation(shaderProgram.getId(), "texture1"), 0);
@@ -176,7 +173,7 @@ auto main() -> int
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		glm::mat4 trans{ 1.f };
-		trans = glm::rotate(trans, glm::radians(90.f), glm::vec3(0.f, 0.f, 1.f));
+		trans = glm::rotate(trans, glm::radians(90.f), glm::vec3{0.f, 0.f, 1.f});
 		trans = glm::scale(trans, glm::vec3{ 0.5, 0.5, 0.5 });
 
 		const auto transLoc= glGetUniformLocation(shaderProgram.getId(), "transform");
