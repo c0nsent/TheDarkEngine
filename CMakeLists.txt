@@ -10,6 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(glfw3 3.5 REQUIRED)
 find_package(glm REQUIRED)
+find_package(imgui REQUIRED)
 
 add_subdirectory(third-party/glad)
 add_subdirectory(glow)
@@ -59,6 +60,7 @@ add_dependencies(${PROJECT_NAME} copy_textures)
 target_link_libraries(${PROJECT_NAME}
         glfw
         glm::glm
+        imgui::imgui
         stb
         glad
         glow

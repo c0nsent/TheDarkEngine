@@ -1,18 +1,21 @@
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
+
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 #include "glow/basic-types.hpp"
 #include "glow/error.hpp"
-//#include "glow/screen-cleaner.hpp"
 #include "glow/shader-program.hpp"
 #include "glow/shader.hpp"
-//#include "glow/utility.hpp"
-//#include "glow/uniform.hpp"
 
 #include <array>
 #include <iostream>
@@ -20,8 +23,8 @@
 
 using namespace glow::basicTypes;
 
-constexpr i32 WIDTH{800};
-constexpr i32 HEIGHT{600};
+constexpr i32 WIDTH{620};
+constexpr i32 HEIGHT{480};
 constexpr auto TITLE{"The Dark Engine"};
 
 
@@ -81,23 +84,37 @@ auto main() -> int
 	if (not glfwInit())
 	{
 		std::cerr << "Failed to initialize GLFW\n";
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
+
 	GLFWwindow *window{glfwCreateWindow(WIDTH, HEIGHT, TITLE, nullptr, nullptr)};
 	if (window == nullptr)
 	{
 		std::cerr << "Failed to create window\n";
 		glfwTerminate();
-		return 1;
+		return EXIT_FAILURE;
 	}
 
 	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
+	glfwSwapInterval(1);
+
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	/*ImGuiIO &io{ImGui::GetIO()};
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;*/
+
+	ImGui_ImplGlfw_InitForOpenGL(window, true);
+	ImGui_ImplOpenGL3_Init();
+
+
+
 
 	if (not gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
 	{
@@ -165,16 +182,30 @@ auto main() -> int
 	shaderProgram.use();
 	glUniform1i(glGetUniformLocation(shaderProgram.getId(), "texture1"), 0);
 
+	f32 rotationScaler{0.f};
+
 	while (not glfwWindowShouldClose(window))
 	{
 		processInput(window);
 
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+
+		ImGui::NewFrame();
+		ImGui::Begin(TITLE);
+		ImGui::SliderFloat("Speed", &rotationScaler, 0.f, 1.f);
+		ImGui::End();
+
 		glClearColor(0.2f, 0.3f, 0.3f, 1.f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		glm::mat4 trans{ 1.f };
+		/*glm::mat4 trans{ 1.f };
 		trans = glm::rotate(trans, glm::radians(90.f), glm::vec3{0.f, 0.f, 1.f});
-		trans = glm::scale(trans, glm::vec3{ 0.5, 0.5, 0.5 });
+		trans = glm::scale(trans, glm::vec3{ 0.5, 0.5, 0.5 });*/
+
+		glm::mat4 trans{1.f};
+		//trans = glm::translate(trans, glm::vec3(0.5, -0.5, 0.0));
+		trans = glm::rotate(trans, static_cast<f32>(glfwGetTime()) * rotationScaler, glm::vec3(0.0f, 0.0, 1.f));
 
 		const auto transLoc= glGetUniformLocation(shaderProgram.getId(), "transform");
 		glUniformMatrix4fv(transLoc, 1, GL_FALSE, glm::value_ptr(trans));
@@ -188,6 +219,9 @@ auto main() -> int
 
 		glow::Error::printIfError();
 
+		ImGui::Render();
+		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
@@ -196,6 +230,10 @@ auto main() -> int
 	glDeleteVertexArrays(1, &vao);
 	glDeleteBuffers(1, &vbo);
 	glDeleteBuffers(1, &ebo);
+
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
 
 	glfwDestroyWindow(window);
 	glfwTerminate();
