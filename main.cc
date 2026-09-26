@@ -19,6 +19,7 @@
 
 #include <array>
 #include <iostream>
+#include <print>
 
 
 using namespace glow::basicTypes;
@@ -182,7 +183,8 @@ auto main() -> int
 	shaderProgram.use();
 	glUniform1i(glGetUniformLocation(shaderProgram.getId(), "texture1"), 0);
 
-	f32 rotationScaler{0.f};
+	f32 rotationScaler{1.f};
+    f32 angle{0.f};
 
 	while (not glfwWindowShouldClose(window))
 	{
@@ -193,29 +195,35 @@ auto main() -> int
 
 		ImGui::NewFrame();
 		ImGui::Begin(TITLE);
-		ImGui::SliderFloat("Speed", &rotationScaler, 0.f, 1.f);
+		ImGui::SliderFloat("Speed", &rotationScaler, 0.25f, 2.f);
 		ImGui::End();
 
 		glClearColor(0.2f, 0.3f, 0.3f, 1.f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		/*glm::mat4 trans{ 1.f };
-		trans = glm::rotate(trans, glm::radians(90.f), glm::vec3{0.f, 0.f, 1.f});
-		trans = glm::scale(trans, glm::vec3{ 0.5, 0.5, 0.5 });*/
+	    angle += 0.01f * rotationScaler;
+	    std::println("Angle: {}", angle);
 
-		glm::mat4 trans{1.f};
-		//trans = glm::translate(trans, glm::vec3(0.5, -0.5, 0.0));
-		trans = glm::rotate(trans, static_cast<f32>(glfwGetTime()) * rotationScaler, glm::vec3(0.0f, 0.0, 1.f));
+	    glm::mat4 trans{1.f};
+	    trans = glm::translate(trans, {0.5, -0.5, 0.0});
+	    trans = glm::rotate(trans, angle, {0.0f, 0.0f, 1.f});
 
-		const auto transLoc= glGetUniformLocation(shaderProgram.getId(), "transform");
-		glUniformMatrix4fv(transLoc, 1, GL_FALSE, glm::value_ptr(trans));
+
+	    const auto transLoc= glGetUniformLocation(shaderProgram.getId(), "transform");
+	    glUniformMatrix4fv(transLoc, 1, GL_FALSE, glm::value_ptr(trans));
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, obamaTexture);
 
 		shaderProgram.use();
 		glBindVertexArray(vao);
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, nullptr);
+		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
+
+	    glm::mat4 trans2{1.f};
+	    trans2 = glm::translate(trans2, {-0.5f, 0.5f, 0.f});
+	    glUniformMatrix4fv(transLoc, 1, GL_FALSE, glm::value_ptr(trans2));
+
+	    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
 
 		glow::Error::printIfError();
 
