@@ -130,16 +130,62 @@ auto main() -> int
 	)};
 
 	constexpr auto vertices{ std::to_array<f32>({
-		 0.5f,  0.5f, 0.0f, 1.0f, 1.0f,
-		 0.5f, -0.5f, 0.0f,	1.0f, 0.0f,
-		-0.5f, -0.5f, 0.0f,	0.0f, 0.0f,
-		-0.5f,  0.5f, 0.0f,	0.0f, 1.0f,
+	    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+            0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+            0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+            0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+           -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+           -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+           -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+            0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+            0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+            0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+           -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+           -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+           -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+           -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+           -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+           -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+           -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+           -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+            0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+            0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+            0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+            0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+            0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+            0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+           -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+            0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+            0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+            0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+           -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+           -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+           -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+            0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+            0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+            0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+           -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+           -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+
 	})};
 
-	constexpr auto indices{ std::to_array<u32>({
-		0, 1, 3,
-		1, 2, 3,
-	})};
+    glm::vec3 cubePositions[] = {
+        glm::vec3( 0.0f,  0.0f,  0.0f),
+        glm::vec3( 2.0f,  5.0f, -15.0f),
+        glm::vec3(-1.5f, -2.2f, -2.5f),
+        glm::vec3(-3.8f, -2.0f, -12.3f),
+        glm::vec3( 2.4f, -0.4f, -3.5f),
+        glm::vec3(-1.7f,  3.0f, -7.5f),
+        glm::vec3( 1.3f, -2.0f, -2.5f),
+        glm::vec3( 1.5f,  2.0f, -2.5f),
+        glm::vec3( 1.5f,  0.2f, -1.5f),
+        glm::vec3(-1.3f,  1.0f, -1.5f)
+    };
 
 	stbi_set_flip_vertically_on_load(true);
 
@@ -149,9 +195,8 @@ auto main() -> int
 
     glow::Error::printIfError();
 
-	u32 vbo, vao, ebo;
+	u32 vbo, vao;
 	glGenBuffers(1, &vbo);
-	glGenBuffers(1, &ebo);
 	glGenVertexArrays(1, &vao);
 
     glow::Error::printIfError();
@@ -165,17 +210,18 @@ auto main() -> int
 
     glow::Error::printIfError();
 
+	/*
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-	glNamedBufferData(ebo, indices.size() * sizeof(indices.front()), indices.data(), GL_STATIC_DRAW);
+	glNamedBufferData(ebo, indices.size() * sizeof(indices.front()), indices.data(), GL_STATIC_DRAW);*/
 
     glow::Error::printIfError();
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, false, 5 * sizeof(indices.front()), reinterpret_cast<void *>(0));
+	glVertexAttribPointer(0, 3, GL_FLOAT, false, 5 * sizeof(vertices.front()), reinterpret_cast<void *>(0));
 	glEnableVertexAttribArray(0);
 
     glow::Error::printIfError();
 
-	glVertexAttribPointer(1, 2, GL_FLOAT, false, 5 * sizeof(indices.front()), reinterpret_cast<void*>(3 * sizeof(indices.front())));
+	glVertexAttribPointer(1, 2, GL_FLOAT, false, 5 * sizeof(vertices.front()), reinterpret_cast<void*>(3 * sizeof(vertices.front())));
 	glEnableVertexAttribArray(1);
 
     glow::Error::printIfError();
@@ -184,7 +230,10 @@ auto main() -> int
 	glUniform1i(glGetUniformLocation(shaderProgram.getId(), "texture1"), 0);
 
 	f32 rotationScaler{1.f};
-    f32 angle{0.f};
+
+    constexpr auto fov = glm::radians(45.f);
+
+    glEnable(GL_DEPTH_TEST);
 
 	while (not glfwWindowShouldClose(window))
 	{
@@ -199,31 +248,49 @@ auto main() -> int
 		ImGui::End();
 
 		glClearColor(0.2f, 0.3f, 0.3f, 1.f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	    angle += 0.01f * rotationScaler;
-	    std::println("Angle: {}", angle);
+	    auto model = glm::rotate(glm::mat4{1.f}, glm::radians(-55.f), {1.f, 0.f, 0.f});
+        model = glm::rotate(model, static_cast<f32>(glfwGetTime() * glm::radians(50.f)), {0.5f, 1.f, 0.f});
 
-	    glm::mat4 trans{1.f};
-	    trans = glm::translate(trans, {0.5, -0.5, 0.0});
-	    trans = glm::rotate(trans, angle, {0.0f, 0.0f, 1.f});
+        constexpr auto view = glm::translate(glm::mat4{1.f}, {0.f, 0.f, -3.f});
+
+	    const auto perspectiveProjection
+	    { glm::perspective(
+            fov,
+            static_cast<f32>(WIDTH)/static_cast<f32>(HEIGHT),
+            0.1f,
+            100.f
+        )
+    };
 
 
-	    const auto transLoc= glGetUniformLocation(shaderProgram.getId(), "transform");
-	    glUniformMatrix4fv(transLoc, 1, GL_FALSE, glm::value_ptr(trans));
+	    const auto modelId = glGetUniformLocation(shaderProgram.getId(), "model");
+	    glUniformMatrix4fv(modelId, 1, GL_FALSE, glm::value_ptr(model));
+
+	    const auto viewId = glGetUniformLocation(shaderProgram.getId(), "view");
+	    glUniformMatrix4fv(viewId, 1, GL_FALSE, glm::value_ptr(view));
+
+	    const auto perspectiveProjectionId = glGetUniformLocation(shaderProgram.getId(), "projection");
+	    glUniformMatrix4fv(perspectiveProjectionId, 1, GL_FALSE, glm::value_ptr(perspectiveProjection));
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, obamaTexture);
 
 		shaderProgram.use();
 		glBindVertexArray(vao);
-		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
+        for (u32 i{0}; i < 10; i++)
+        {
+            auto model = glm::mat4{1.f};
+            model = glm::translate(model, cubePositions[i]);
+            float angle = 20.f * i;
+            model = glm::rotate(model, glm::radians(angle), {1.f, 0.3f, 0.5f});
 
-	    glm::mat4 trans2{1.f};
-	    trans2 = glm::translate(trans2, {-0.5f, 0.5f, 0.f});
-	    glUniformMatrix4fv(transLoc, 1, GL_FALSE, glm::value_ptr(trans2));
+            glUniformMatrix4fv(modelId, 1, GL_FALSE, glm::value_ptr(model));
 
-	    glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, nullptr);
+            glDrawArrays(GL_TRIANGLES, 0, 36);
+        }
+
 
 		glow::Error::printIfError();
 
@@ -236,10 +303,9 @@ auto main() -> int
 
 	glDeleteProgram(shaderProgram.getId());
 	glDeleteVertexArrays(1, &vao);
-	glDeleteBuffers(1, &vbo);
-	glDeleteBuffers(1, &ebo);
+    glDeleteBuffers(1, &vbo);
 
-	ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
 
