@@ -19,11 +19,11 @@ namespace ig=ImGui;
 #include "glow/shader-program.hpp"
 #include "glow/shader.hpp"
 
+using namespace glow::basicTypes;
+
 #include <array>
 #include <iostream>
 
-
-using namespace glow::basicTypes;
 
 constexpr i32 WIDTH{620};
 constexpr i32 HEIGHT{480};
@@ -112,7 +112,7 @@ auto main() -> int
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	GLFWwindow *window{glfwCreateWindow(WIDTH, HEIGHT, TITLE, nullptr, nullptr)};
+	GLFWwindow *window{glfwCreateWindow(WIDTH, HEIGHT, TITLE, glfwGetPrimaryMonitor(), nullptr)};
 	if (window == nullptr)
 	{
 		std::cerr << "Failed to create window\n";
