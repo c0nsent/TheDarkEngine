@@ -2,6 +2,8 @@
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
 
+namespace ig=ImGui;
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -19,7 +21,6 @@
 
 #include <array>
 #include <iostream>
-#include <print>
 
 
 using namespace glow::basicTypes;
@@ -29,30 +30,38 @@ constexpr i32 HEIGHT{480};
 constexpr auto TITLE{"The Dark Engine"};
 
 
-static void errorCallback(const i32 error, const char *description)
+static void glfwErrorCallback(const i32 error, const char *description) noexcept
 {
-	std::cerr << "Error: " << error << " " << description << std::endl;
+	std::cerr << "[GLFW] Error " << error << ": "
+		<< (description ? description : "unknown error") << '\n';
 }
 
 
-static void framebufferSizeCallback(GLFWwindow *, const i32 width, const i32 height)
+static void framebufferSizeCallback(GLFWwindow *, const i32 width, const i32 height) noexcept
 {
 	glViewport(0, 0, width, height);
 }
 
 
-static void processInput(GLFWwindow *window)
+static void processInput(GLFWwindow *window) noexcept
 {
 	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
 		glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
 
 
-static auto createTexture(const char *path) -> u32
+static auto createTexture(const char *path) noexcept -> u32
 {
-	u32 textureId;
+	u32 textureId{0};
+
+	i32 width, height, nrChannels;
+	u8 *imageData{stbi_load(path, &width, &height, &nrChannels, 0)};
+	if (not imageData)
+	{
+		return textureId;
+	}
+
 	glGenTextures(1, &textureId);
-	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, textureId);
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -61,15 +70,19 @@ static auto createTexture(const char *path) -> u32
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	i32 width, height, nrChannels;
-	u8 *imageData{stbi_load(path, &width, &height, &nrChannels, 0)};
-
 	const i32 format{nrChannels == 3 ? GL_RGB : GL_RGBA};
 
-	if (not imageData)
-		throw std::runtime_error{"Failed to load image\n"};
-
-	glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, imageData);
+	glTexImage2D(
+		GL_TEXTURE_2D,
+		0,
+		format,
+		width,
+		height,
+		0,
+		format,
+		GL_UNSIGNED_BYTE,
+		imageData
+	);
 	glGenerateMipmap(GL_TEXTURE_2D);
 
 	stbi_image_free(imageData);
@@ -78,20 +91,26 @@ static auto createTexture(const char *path) -> u32
 }
 
 
+static void setMatrixValue(const glow::ShaderProgram &sp, const char *matrixName, const glm::mat4 &matrix) noexcept
+{
+	glUniformMatrix4fv(
+		glGetUniformLocation(sp.getId(), matrixName),
+		1,
+		GL_FALSE,
+		glm::value_ptr(matrix)
+	);
+}
+
+
 auto main() -> int
 {
-	glfwSetErrorCallback(errorCallback);
+	glfwSetErrorCallback(glfwErrorCallback);
 
-	if (not glfwInit())
-	{
-		std::cerr << "Failed to initialize GLFW\n";
-		return EXIT_FAILURE;
-	}
+	if (not glfwInit()) return EXIT_FAILURE;
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
 
 	GLFWwindow *window{glfwCreateWindow(WIDTH, HEIGHT, TITLE, nullptr, nullptr)};
 	if (window == nullptr)
@@ -103,7 +122,6 @@ auto main() -> int
 
 	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
-	glfwSwapInterval(1);
 
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -113,9 +131,6 @@ auto main() -> int
 
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init();
-
-
-
 
 	if (not gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
 	{
@@ -174,7 +189,7 @@ auto main() -> int
 
 	})};
 
-    glm::vec3 cubePositions[] = {
+    constexpr glm::vec3 cubePositions[] = {
         glm::vec3( 0.0f,  0.0f,  0.0f),
         glm::vec3( 2.0f,  5.0f, -15.0f),
         glm::vec3(-1.5f, -2.2f, -2.5f),
@@ -193,6 +208,12 @@ auto main() -> int
 
 	const auto obamaTexture{createTexture("textures/obama.png")};
 
+	if (not obamaTexture)
+	{
+		std::cerr << "Failed to load texture: " << "textures/obama.png";
+		return EXIT_FAILURE;
+	}
+
     glow::Error::printIfError();
 
 	u32 vbo, vao;
@@ -210,10 +231,6 @@ auto main() -> int
 
     glow::Error::printIfError();
 
-	/*
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-	glNamedBufferData(ebo, indices.size() * sizeof(indices.front()), indices.data(), GL_STATIC_DRAW);*/
-
     glow::Error::printIfError();
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, false, 5 * sizeof(vertices.front()), reinterpret_cast<void *>(0));
@@ -229,9 +246,10 @@ auto main() -> int
 	shaderProgram.use();
 	glUniform1i(glGetUniformLocation(shaderProgram.getId(), "texture1"), 0);
 
-	f32 rotationScaler{1.f};
 
-    constexpr auto fov = glm::radians(45.f);
+    f32 fov{45.f};
+	auto width{WIDTH};
+	auto height{HEIGHT};
 
     glEnable(GL_DEPTH_TEST);
 
@@ -242,37 +260,34 @@ auto main() -> int
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 
-		ImGui::NewFrame();
-		ImGui::Begin(TITLE);
-		ImGui::SliderFloat("Speed", &rotationScaler, 0.25f, 2.f);
-		ImGui::End();
+		ig::NewFrame();
+		ig::Begin(TITLE);
+		ig::SeparatorText("Projection");
+		ig::SliderFloat("FOV", &fov, 20.f, 360.f);
+		ig::SliderInt("Width", &width, 720, 1920);
+		ig::SliderInt("Height", &height, 400, 1080);
+
+		ig::Separator();
+		//TODO: Решить траблы с кириллицей в ImGui
+		ig::SeparatorText(reinterpret_cast<const char*>(u8"View"));
+
+		ig::End();
 
 		glClearColor(0.2f, 0.3f, 0.3f, 1.f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	    auto model = glm::rotate(glm::mat4{1.f}, glm::radians(-55.f), {1.f, 0.f, 0.f});
-        model = glm::rotate(model, static_cast<f32>(glfwGetTime() * glm::radians(50.f)), {0.5f, 1.f, 0.f});
 
-        constexpr auto view = glm::translate(glm::mat4{1.f}, {0.f, 0.f, -3.f});
+        auto view = glm::translate(glm::mat4{1.f}, {-3.f, 0.f, -3.f});
+		setMatrixValue(shaderProgram, "view", view);
 
 	    const auto perspectiveProjection
 	    { glm::perspective(
-            fov,
-            static_cast<f32>(WIDTH)/static_cast<f32>(HEIGHT),
+			glm::radians(fov),
+            static_cast<f32>(width)/static_cast<f32>(height),
             0.1f,
             100.f
-        )
-    };
-
-
-	    const auto modelId = glGetUniformLocation(shaderProgram.getId(), "model");
-	    glUniformMatrix4fv(modelId, 1, GL_FALSE, glm::value_ptr(model));
-
-	    const auto viewId = glGetUniformLocation(shaderProgram.getId(), "view");
-	    glUniformMatrix4fv(viewId, 1, GL_FALSE, glm::value_ptr(view));
-
-	    const auto perspectiveProjectionId = glGetUniformLocation(shaderProgram.getId(), "projection");
-	    glUniformMatrix4fv(perspectiveProjectionId, 1, GL_FALSE, glm::value_ptr(perspectiveProjection));
+        )};
+		setMatrixValue(shaderProgram, "projection", perspectiveProjection);
 
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, obamaTexture);
@@ -283,10 +298,9 @@ auto main() -> int
         {
             auto model = glm::mat4{1.f};
             model = glm::translate(model, cubePositions[i]);
-            float angle = 20.f * i;
-            model = glm::rotate(model, glm::radians(angle), {1.f, 0.3f, 0.5f});
+            model = glm::rotate(model, glm::radians(20.f * i), {1.f, 0.3f, 0.5f});
 
-            glUniformMatrix4fv(modelId, 1, GL_FALSE, glm::value_ptr(model));
+        	setMatrixValue(shaderProgram, "model", model);
 
             glDrawArrays(GL_TRIANGLES, 0, 36);
         }
