@@ -94,20 +94,12 @@ static void setMatrixValue(const glow::ShaderProgram &sp, const char *matrixName
 	);
 }
 
-f64 cursorXPostion, cursorYPosition;
+glm::f64vec2 cursorPosition{ 0, 0 };
 
 
 static void cursorPositionCallback(GLFWwindow *window, const f64 xPos, const f64 yPos)
 {
-	cursorXPostion = xPos;
-	cursorYPosition = yPos;
-}
-
-
-glm::f64vec2 currentWindowSize;
-static void windowSizeCallback( GLFWwindow *window, const i32 width, i32 height)
-{
-	currentWindowSize = { width, height };
+	cursorPosition = { xPos, yPos };
 }
 
 auto main() -> int
@@ -131,7 +123,7 @@ auto main() -> int
 	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
-	glfwGetCursorPos(window, &cursorXPostion, &cursorYPosition);
+	glfwGetCursorPos(window, &cursorPosition.x, &cursorPosition.y);
 
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -270,10 +262,11 @@ auto main() -> int
 	auto height{HEIGHT};
 
 	glm::f64vec2 cursorOrigin;
-	auto cameraHorizontalMove{ 0.f };
-	auto cameraVerticalMove{ 0.f };
+	glm::vec2 cameraMoveInDegrees;
+	glm::vec2 camVelocity;
+	glm::vec2 prevCameraMove;
 
-
+	bool firstIteration;
 
     glEnable(GL_DEPTH_TEST);
 
@@ -281,22 +274,26 @@ auto main() -> int
 	{
 		if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
 		{
-			if (cursorOrigin != glm::f64vec2{} )
+			if ( not firstIteration)
 			{
-				glfwGetCursorPos(window, &cursorOrigin.x, &cursorOrigin.y);
+				camVelocity = (cursorPosition - cursorOrigin);
 
-				cameraHorizontalMove += (cursorXPostion - cursorOrigin.x) / 180.f;
-				cameraVerticalMove += (cursorYPosition - cursorOrigin.y) / 180.f;
+				std::cerr << cursorOrigin.x << ", " << cursorOrigin.y << std::endl;
+				std::cerr << cursorPosition.x << " " << cursorPosition.y << std::endl;
+
+				cameraMoveInDegrees = { camVelocity.x / 10, camVelocity.y / 10 };
 			}
 			else
 			{
-				cursorOrigin = {cursorXPostion, cursorYPosition};
+				firstIteration = false;
+				cursorOrigin = cursorPosition;
 			}
 		}
 
 		if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) != GLFW_PRESS)
 		{
-			cursorOrigin = { 0.f, 0.f };
+			firstIteration = true;
+			prevCameraMove += cameraMoveInDegrees;
 		}
 
 		ImGui_ImplOpenGL3_NewFrame();
@@ -312,8 +309,8 @@ auto main() -> int
 		ig::Separator();
 		//TODO: Решить траблы с кириллицей в ImGui
 		ig::SeparatorText(reinterpret_cast<const char*>(u8"View"));
-		ig::SliderFloat("Horizontal movement", &cameraHorizontalMove, -100.f, 100.f);
-		ig::SliderFloat("Vertical movement", &cameraVerticalMove, -100.f, 100.f);
+		/*ig::SliderFlo("Horizontal movement", &cameraMoveInDegrees.y, -100.f, 100.f);
+		ig::SliderFloat("Vertical movement", &cameraVerticalMove, -100.f, 100.f);*/
 		ig::End();
 
 		glClearColor(0.2f, 0.3f, 0.3f, 1.f);
@@ -321,8 +318,8 @@ auto main() -> int
 
 
         auto view = glm::translate(glm::mat4{1.f}, {0.f, 0.f, -3.f});
-		view = glm::rotate(view, glm::radians(cameraVerticalMove), {1.f, 0.f, 0.f});
-		view = glm::rotate(view, glm::radians(cameraHorizontalMove), {0.f, 1.f, 0.f});
+		view = glm::rotate(view, glm::radians(prevCameraMove.y + cameraMoveInDegrees.y), {1.f, 0.f, 0.f});
+		view = glm::rotate(view, glm::radians(prevCameraMove.x + cameraMoveInDegrees.x), {0.f, 1.f, 0.f});
 		setMatrixValue(shaderProgram, "view", view);
 
 	    const auto perspectiveProjection
@@ -359,7 +356,7 @@ auto main() -> int
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 
-		std::cerr << "Iteration completed" << std::endl;
+		//std::cerr << "Iteration completed" << std::endl;
 	}
 
 	glDeleteProgram(shaderProgram.getId());
