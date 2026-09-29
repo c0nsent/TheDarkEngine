@@ -25,8 +25,8 @@ using namespace glow::basicTypes;
 #include <iostream>
 
 
-constexpr i32 WIDTH{620};
-constexpr i32 HEIGHT{480};
+constexpr i32 WIDTH{1920};
+constexpr i32 HEIGHT{1080};
 constexpr auto TITLE{"The Dark Engine"};
 
 
@@ -40,13 +40,6 @@ static void glfwErrorCallback(const i32 error, const char *description) noexcept
 static void framebufferSizeCallback(GLFWwindow *, const i32 width, const i32 height) noexcept
 {
 	glViewport(0, 0, width, height);
-}
-
-
-static void processInput(GLFWwindow *window) noexcept
-{
-	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, GLFW_TRUE);
 }
 
 
@@ -101,6 +94,21 @@ static void setMatrixValue(const glow::ShaderProgram &sp, const char *matrixName
 	);
 }
 
+f64 cursorXPostion, cursorYPosition;
+
+
+static void cursorPositionCallback(GLFWwindow *window, const f64 xPos, const f64 yPos)
+{
+	cursorXPostion = xPos;
+	cursorYPosition = yPos;
+}
+
+
+glm::f64vec2 currentWindowSize;
+static void windowSizeCallback( GLFWwindow *window, const i32 width, i32 height)
+{
+	currentWindowSize = { width, height };
+}
 
 auto main() -> int
 {
@@ -122,6 +130,8 @@ auto main() -> int
 
 	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
+
+	glfwGetCursorPos(window, &cursorXPostion, &cursorYPosition);
 
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -246,16 +256,48 @@ auto main() -> int
 	shaderProgram.use();
 	glUniform1i(glGetUniformLocation(shaderProgram.getId(), "texture1"), 0);
 
+	/*
+	if (glfwRawMouseMotionSupported())
+	{
+		glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+	}
+	*/
+
+	glfwSetCursorPosCallback(window, cursorPositionCallback);
 
     f32 fov{45.f};
 	auto width{WIDTH};
 	auto height{HEIGHT};
 
+	glm::f64vec2 cursorOrigin;
+	auto cameraHorizontalMove{ 0.f };
+	auto cameraVerticalMove{ 0.f };
+
+
+
     glEnable(GL_DEPTH_TEST);
 
 	while (not glfwWindowShouldClose(window))
 	{
-		processInput(window);
+		if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
+		{
+			if (cursorOrigin != glm::f64vec2{} )
+			{
+				glfwGetCursorPos(window, &cursorOrigin.x, &cursorOrigin.y);
+
+				cameraHorizontalMove += (cursorXPostion - cursorOrigin.x) / 180.f;
+				cameraVerticalMove += (cursorYPosition - cursorOrigin.y) / 180.f;
+			}
+			else
+			{
+				cursorOrigin = {cursorXPostion, cursorYPosition};
+			}
+		}
+
+		if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) != GLFW_PRESS)
+		{
+			cursorOrigin = { 0.f, 0.f };
+		}
 
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
@@ -270,14 +312,17 @@ auto main() -> int
 		ig::Separator();
 		//TODO: Решить траблы с кириллицей в ImGui
 		ig::SeparatorText(reinterpret_cast<const char*>(u8"View"));
-
+		ig::SliderFloat("Horizontal movement", &cameraHorizontalMove, -100.f, 100.f);
+		ig::SliderFloat("Vertical movement", &cameraVerticalMove, -100.f, 100.f);
 		ig::End();
 
 		glClearColor(0.2f, 0.3f, 0.3f, 1.f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
-        auto view = glm::translate(glm::mat4{1.f}, {-3.f, 0.f, -3.f});
+        auto view = glm::translate(glm::mat4{1.f}, {0.f, 0.f, -3.f});
+		view = glm::rotate(view, glm::radians(cameraVerticalMove), {1.f, 0.f, 0.f});
+		view = glm::rotate(view, glm::radians(cameraHorizontalMove), {0.f, 1.f, 0.f});
 		setMatrixValue(shaderProgram, "view", view);
 
 	    const auto perspectiveProjection
@@ -313,6 +358,8 @@ auto main() -> int
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
+
+		std::cerr << "Iteration completed" << std::endl;
 	}
 
 	glDeleteProgram(shaderProgram.getId());
