@@ -266,7 +266,7 @@ auto main() -> int
 	glm::vec2 camVelocity;
 	glm::vec2 prevCameraMove;
 
-	bool firstIteration;
+	bool firstIteration{ true };
 
     glEnable(GL_DEPTH_TEST);
 
