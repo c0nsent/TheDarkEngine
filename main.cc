@@ -94,12 +94,61 @@ static void setMatrixValue(const glow::ShaderProgram &sp, const char *matrixName
 	);
 }
 
-glm::f64vec2 cursorPosition{ 0, 0 };
+
+struct Camera
+{
+	glm::vec2 cursorOrigin;
+	glm::vec2 lastCursorPos;
+	glm::vec2 offset;
+	glm::vec2 lastDirection;
+};
+
+
 
 
 static void cursorPositionCallback(GLFWwindow *window, const f64 xPos, const f64 yPos)
 {
-	cursorPosition = { xPos, yPos };
+	auto *const cam { static_cast<Camera *>(glfwGetWindowUserPointer(window)) };
+	if (not cam) return;
+
+	cam->lastCursorPos = {xPos, yPos};
+}
+
+
+static void mouseButtonCallback(GLFWwindow *window, const i32 button, const i32 action,	[[maybe_unused]] i32 mods)
+{
+	if (button != GLFW_MOUSE_BUTTON_LEFT) return;
+
+	auto *const cam{ static_cast<Camera *>(glfwGetWindowUserPointer(window)) };
+	if (not cam ) return;
+
+	switch (action)
+	{
+		case GLFW_PRESS:
+		{
+			//glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+			cam->cursorOrigin = cam->lastCursorPos;
+			return;
+		}
+		case GLFW_RELEASE:
+		{
+			cam->lastDirection = cam->lastCursorPos;
+			cam-> lastCursorPos = {0, 0};
+			return;
+		}
+
+		case GLFW_REPEAT:
+		{
+			cam->offset = cam->lastCursorPos - cam->cursorOrigin;
+
+
+			std::cerr << "Offest  " << cam->offset.x << ' ' << cam->offset.y << std::endl;
+
+			return;
+		}
+		default: {}
+	}
 }
 
 auto main() -> int
@@ -123,7 +172,6 @@ auto main() -> int
 	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
-	glfwGetCursorPos(window, &cursorPosition.x, &cursorPosition.y);
 
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -248,32 +296,31 @@ auto main() -> int
 	shaderProgram.use();
 	glUniform1i(glGetUniformLocation(shaderProgram.getId(), "texture1"), 0);
 
-	/*
-	if (glfwRawMouseMotionSupported())
+
+	Camera camera { .cursorOrigin = {0, 0}, .lastCursorPos = {0, 0 }, .offset = {0, 0 }, .lastDirection =  {0, 0}};
+	glfwSetWindowUserPointer(window, &camera);
+	glfwSetCursorPosCallback(window, cursorPositionCallback);
+	glfwSetMouseButtonCallback(window, mouseButtonCallback);
+
+	/*if (glfwRawMouseMotionSupported())
 	{
 		glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-	}
-	*/
+	}*/
 
-	glfwSetCursorPosCallback(window, cursorPositionCallback);
+
 
     f32 fov{45.f};
 	auto width{WIDTH};
 	auto height{HEIGHT};
 
-	glm::f64vec2 cursorOrigin;
-	glm::vec2 cameraMoveInDegrees;
-	glm::vec2 camVelocity;
-	glm::vec2 prevCameraMove;
-
-	bool firstIteration{ true };
-
     glEnable(GL_DEPTH_TEST);
 
 	while (not glfwWindowShouldClose(window))
 	{
-		if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
+		/*if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) == GLFW_PRESS)
 		{
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
 			if ( not firstIteration)
 			{
 				camVelocity = (cursorPosition - cursorOrigin);
@@ -288,13 +335,14 @@ auto main() -> int
 				firstIteration = false;
 				cursorOrigin = cursorPosition;
 			}
-		}
+		}*/
 
-		if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) != GLFW_PRESS)
+		/*if (glfwGetKey(window, GLFW_KEY_LEFT_CONTROL) != GLFW_PRESS)
 		{
+			glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 			firstIteration = true;
 			prevCameraMove += cameraMoveInDegrees;
-		}
+		}*/
 
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
@@ -316,10 +364,11 @@ auto main() -> int
 		glClearColor(0.2f, 0.3f, 0.3f, 1.f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		const auto camDirection{ camera.lastDirection + camera.offset};
 
         auto view = glm::translate(glm::mat4{1.f}, {0.f, 0.f, -3.f});
-		view = glm::rotate(view, glm::radians(prevCameraMove.y + cameraMoveInDegrees.y), {1.f, 0.f, 0.f});
-		view = glm::rotate(view, glm::radians(prevCameraMove.x + cameraMoveInDegrees.x), {0.f, 1.f, 0.f});
+		view = glm::rotate(view, glm::radians(camDirection.y), {1.f, 0.f, 0.f});
+		view = glm::rotate(view, glm::radians(camDirection.x), {0.f, 1.f, 0.f});
 		setMatrixValue(shaderProgram, "view", view);
 
 	    const auto perspectiveProjection
