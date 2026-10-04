@@ -38,43 +38,40 @@ class FpsCounter
 public:
 
 	FpsCounter() noexcept
-		: index{0}
+		: m_frameTimes{} , m_sum{0} , index{0}
 	{
 		using namespace std::chrono_literals;
 
 		for (auto &frameTime : m_frameTimes)
 		{
-			frameTime = 0ms;
+			frameTime = 0us;
 		}
 	};
 
 	auto addValue(const std::chrono::microseconds frameTime)
 	{
+		m_sum -= m_frameTimes[index];
+		m_sum += frameTime;
+
 		m_frameTimes[index] = frameTime;
 
-		if ( index == 100)
-		{
-			index = 0;
-		}
+		index = (index == m_frameTimes.size() - 1) ?  0 : index + 1;
 	}
 
-	[[nodiscard]] auto count() const -> u32
+	[[nodiscard]] auto count() const noexcept -> u32
 	{
 		using namespace std::chrono_literals;
 
-		std::chrono::microseconds sum{0};
+		const auto avg{ m_sum / m_frameTimes.size() };
+		if ( avg == 0us) [[unlikely]] return 0;
 
-		for (const auto frameTime : m_frameTimes)
-		{
-			sum += frameTime;
-		}
-
-		return 0s / (sum / 100);
+		return 1s / avg;
 	}
 
 private:
 
 	std::array<std::chrono::microseconds, 100> m_frameTimes;
+	std::chrono::microseconds m_sum;
 	size_t index;
 };
 
@@ -353,14 +350,27 @@ auto main() -> int
     glEnable(GL_DEPTH_TEST);
 
 	FpsCounter counter;
+	std::chrono::microseconds duration{0};
 
-	std::chrono::microseconds duration{1};
+	glm::vec3 camPos{0, 0, -3};
 
 	while (not glfwWindowShouldClose(window))
 	{
-		if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+		if (glfwGetKey(window, GLFW_KEY_W))
 		{
-
+			camPos.z += 0.1;
+		}
+		if (glfwGetKey(window, GLFW_KEY_S))
+		{
+			camPos.z -= 0.1;
+		}
+		if (glfwGetKey(window, GLFW_KEY_A))
+		{
+			camPos.x += 0.1;
+		}
+		if (glfwGetKey(window, GLFW_KEY_D))
+		{
+			camPos.x -= 0.1;
 		}
 
 		counter.addValue(duration);
@@ -372,9 +382,7 @@ auto main() -> int
 		ig::NewFrame();
 		ig::Begin(TITLE);
 
-
 		ig::Text("%d fps", counter.count());
-		std::cout << duration.count() << std::endl;
 
 		ig::SeparatorText("Projection");
 		ig::SliderFloat("FOV", &fov, 20.f, 360.f);
@@ -398,7 +406,7 @@ auto main() -> int
 
 		const auto camDirection{ camera.camPos + camera.offset};
 
-		auto view = glm::translate(glm::mat4{1.f}, {0.f, 0.f, -3.f});
+		auto view = glm::translate(glm::mat4{1.f}, camPos);
 		view = glm::rotate(view, glm::radians(camDirection.y), {1.f, 0.f, 0.f});
 		view = glm::rotate(view, glm::radians(camDirection.x), {0.f, 1.f, 0.f});
 		setMatrixValue(shaderProgram, "view", view);
@@ -419,9 +427,11 @@ auto main() -> int
 		glBindVertexArray(vao);
 		for (u32 i{0}; i < 10; i++)
 		{
-			auto model = glm::mat4{1.f};
-			model = glm::translate(model, cubePositions[i]);
-			model = glm::rotate(model, glm::radians(20.f * i), {1.f, 0.3f, 0.5f});
+			auto model = glm::translate(glm::mat4{1.f}, cubePositions[i]);
+
+			const f32 rotation = (i % 2 == 0) ? 20 * static_cast<f32>(i) : 10 * glfwGetTime() * i;
+
+			model = glm::rotate(model, glm::radians(rotation), {1.f, 0.3f, 0.5f});
 
 			setMatrixValue(shaderProgram, "model", model);
 
