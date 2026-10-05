@@ -152,15 +152,27 @@ struct Camera
 };
 
 
-
-static void cursorPositionCallback(GLFWwindow *window, const f64 xPos, const f64 yPos)
+struct CameraNew
 {
-	auto *const cam { static_cast<Camera *>(glfwGetWindowUserPointer(window)) };
+	glm::vec3 pos;
+	glm::vec3 front;
+	glm::vec3 up;
+
+	bool isButtonPressed = false;
+	glm::vec2 cursorPos;
+	glm::vec2 cursorOrigin;
+	glm::vec2 offset;
+};
+
+
+/*static void cursorPositionCallback(GLFWwindow *window, const f64 xPos, const f64 yPos)
+{
+	auto *const cam { static_cast<CameraNew *>(glfwGetWindowUserPointer(window)) };
 	if (not cam) return;
 
 	cam->cursorPos = {xPos, yPos};
 
-	if (cam->isButtonAlreadyPressed)
+	if (cam->isButtonPressed)
 	{
 		cam->offset = cam->cursorPos - cam->cursorOrigin;
 	}
@@ -171,11 +183,13 @@ static void mouseButtonCallback(GLFWwindow *window, const i32 button, const i32 
 {
 	if (button != GLFW_MOUSE_BUTTON_RIGHT) return;
 
-	auto *const cam{ static_cast<Camera *>(glfwGetWindowUserPointer(window)) };
+	auto *const cam{ static_cast<CameraNew *>(glfwGetWindowUserPointer(window)) };
 	if (not cam ) return;
 
 	if (action == GLFW_PRESS)
 	{
+
+
 		cam->isButtonAlreadyPressed = true;
 		cam->cursorOrigin = cam->cursorPos;
 	}
@@ -186,7 +200,9 @@ static void mouseButtonCallback(GLFWwindow *window, const i32 button, const i32 
 		cam->camPos += cam->offset;
 		cam->offset = {0, 0};
 	}
-}
+}*/
+
+
 
 auto main() -> int
 {
@@ -205,7 +221,6 @@ auto main() -> int
 		glfwTerminate();
 		return EXIT_FAILURE;
 	}
-
 	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
@@ -223,7 +238,7 @@ auto main() -> int
 	{
 		std::cerr << "Failed to initialize GLAD.\n";
 		return 1;
-	}
+	};
 
 	const glow::ShaderProgram shaderProgram{std::make_tuple(
 		glow::VertexShader{"shaders/shader.vert"},
@@ -333,10 +348,13 @@ auto main() -> int
 	shaderProgram.use();
 	glUniform1i(glGetUniformLocation(shaderProgram.getId(), "texture1"), 0);
 
-	Camera camera { .cursorOrigin = {0, 0}, .cursorPos = {0, 0 }, .offset = {0, 0 }, .camPos =  {0, 0}};
-	glfwSetWindowUserPointer(window, &camera);
+	//Camera camera { .cursorOrigin = {0, 0}, .cursorPos = {0, 0 }, .offset = {0, 0 }, .camPos =  {0, 0}};
+	//glfwSetWindowUserPointer(window, &camera);
+
+	CameraNew cam;
+	/*glfwSetWindowUserPointer(window, &cam);
 	glfwSetCursorPosCallback(window, cursorPositionCallback);
-	glfwSetMouseButtonCallback(window, mouseButtonCallback);
+	glfwSetMouseButtonCallback(window, mouseButtonCallback);*/
 
 	if (glfwRawMouseMotionSupported())
 	{
@@ -352,25 +370,40 @@ auto main() -> int
 	FpsCounter counter;
 	std::chrono::microseconds duration{0};
 
-	glm::vec3 camPos{0, 0, -3};
+	glm::vec3 cameraPos{ 0.f, 0.f, 3.f };
+	glm::vec3 cameraFront{ 0.0f, 0.0f, -1.f };
+	glm::vec3 cameraUp{ 0.f , 1.f, 0.f };
+
+	f32 deltaTime{}, lastFrame{};
+
+	glm::vec3 direction;
+	direction.x = glm::cos(glm::radians(yaw))
+
 
 	while (not glfwWindowShouldClose(window))
 	{
+		float currentFrame = glfwGetTime();
+		deltaTime = currentFrame - lastFrame;
+		lastFrame = currentFrame;
+
+		const f32 cameraSpeed = 2.5f * deltaTime;
+
 		if (glfwGetKey(window, GLFW_KEY_W))
-		{
-			camPos.z += 0.1;
+		{/*
+			camPos.z += 0.1;*/
+			cameraPos += cameraSpeed * cameraFront;
 		}
 		if (glfwGetKey(window, GLFW_KEY_S))
 		{
-			camPos.z -= 0.1;
+			cameraPos -= cameraSpeed * cameraFront;
 		}
 		if (glfwGetKey(window, GLFW_KEY_A))
 		{
-			camPos.x += 0.1;
+			cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 		}
 		if (glfwGetKey(window, GLFW_KEY_D))
 		{
-			camPos.x -= 0.1;
+			cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 		}
 
 		counter.addValue(duration);
@@ -393,22 +426,18 @@ auto main() -> int
 		//TODO: Решить траблы с кириллицей в ImGui
 		ig::SeparatorText(reinterpret_cast<const char*>(u8"View"));
 
-		const auto label = std::string{"IsButtonAlreadyPressed: "} + (camera.isButtonAlreadyPressed ? "True" : "False");
-		ig::Text(label.data());
-		ig::Text("Cursor Origin: %f, %f", camera.cursorOrigin.x, camera.cursorOrigin.y);
-		ig::Text("Offset: %f %f", camera.offset.x, camera.offset.y);
-		ig::Text("CamPos: %f %f", camera.camPos.x, camera.camPos.y);
-
 		ig::End();
 
 		glClearColor(0.2f, 0.3f, 0.3f, 1.f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		const auto camDirection{ camera.camPos + camera.offset};
+		/*
+		auto view = glm::translate(glm::mat4{1.f}, camPos);*/
+		/*view = glm::rotate(view, glm::radians(camDirection.y), {1.f, 0.f, 0.f});
+		view = glm::rotate(view, glm::radians(camDirection.x), {0.f, 1.f, 0.f});*/
 
-		auto view = glm::translate(glm::mat4{1.f}, camPos);
-		view = glm::rotate(view, glm::radians(camDirection.y), {1.f, 0.f, 0.f});
-		view = glm::rotate(view, glm::radians(camDirection.x), {0.f, 1.f, 0.f});
+		const auto view{ glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp) };
+
 		setMatrixValue(shaderProgram, "view", view);
 
 		const auto perspectiveProjection
