@@ -1,12 +1,23 @@
 #include "window.hpp"
 
 #include <iostream>
+#include <utility>
 
 namespace tde
 {
+    Window::Window() noexcept
+    {
+    }
+
+    Window::Window(Window&& other) noexcept
+        : m_window{other.m_window}
+    {
+        other.m_window = nullptr;
+    }
+
     Window::~Window() noexcept
     {
-        glfwDestroyWindow(this->m_window);
+        glfwDestroyWindow(m_window);
         glfwTerminate();
     }
 
@@ -18,8 +29,9 @@ namespace tde
     {
         glfwSetErrorCallback([] (const i32 error, const char *description)
         {
-            std::cerr << "[GLFW] Error " << error << ": "
-                << (description ? description : "unknown error") << '\n';
+            if (description == nullptr) description = "unknown error";
+
+            std::cerr << "[GLFW] Error " << error << ": " << description << '\n';
         });
 
         if (not glfwInit()) return std::unexpected{ "Failed to initialize GLFW" };
@@ -28,7 +40,7 @@ namespace tde
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-        Window window {
+        auto glfwWindow {
             glfwCreateWindow(
                 static_cast<i32>(width),
                 static_cast<i32>(height),
@@ -37,6 +49,9 @@ namespace tde
                 nullptr
                 )
         };
+
+        Window window {};
+        window.m_window = glfwWindow;
 
         if (not window.m_window)
         {
@@ -52,7 +67,6 @@ namespace tde
             }
         );
 
-
         if (not gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
         {
             return std::unexpected{"Failed to initialize GLAD"};
@@ -63,7 +77,17 @@ namespace tde
             glfwSetInputMode(window.m_window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
         }
 
-        return window;
+        return std::move(window);
+    }
+
+    auto Window::shouldClose() const noexcept -> bool
+    {
+        return glfwWindowShouldClose(this->m_window);
+    }
+
+    auto Window::getKey(const Key k) const noexcept -> KeyPressStatus
+    {
+        return static_cast<KeyPressStatus>(glfwGetKey(this->m_window, std::to_underlying(k)));
     }
 
     auto Window::getRawPointer() const noexcept -> GLFWwindow*
@@ -83,7 +107,8 @@ namespace tde
 
     Window::Window(GLFWwindow* glfwWin) noexcept
         : m_window{ glfwWin }
-    {}
+    {
+    }
 }
 
 

@@ -1,9 +1,9 @@
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
 #include <imgui_impl_opengl3.h>
-#include <numeric>
 
 namespace ig=ImGui;
+
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
@@ -25,6 +25,8 @@ using namespace glow::basicTypes;
 #include <iostream>
 #include <chrono>
 #include <algorithm>
+#include <numeric>
+
 
 constexpr i32 WIDTH{1920};
 constexpr i32 HEIGHT{1080};
@@ -185,7 +187,7 @@ auto main() -> int
 		std::cerr << result.error() << std::endl;
 	}
 
-	auto window = *result;
+	const auto window{std::move(*result)};
 
 
 	IMGUI_CHECKVERSION();
@@ -324,7 +326,7 @@ auto main() -> int
 
 	glfwSetInputMode(window.getRawPointer(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-	while (not glfwWindowShouldClose(window.getRawPointer()))
+	while (not window.shouldClose())
 	{
 		const f32 currentFrame{ static_cast<f32>(glfwGetTime())};
 		deltaTime = currentFrame - lastFrame;
@@ -332,20 +334,20 @@ auto main() -> int
 
 		const f32 cameraSpeed = 2.5f * deltaTime;
 
-		if (glfwGetKey(window.getRawPointer(), GLFW_KEY_W))
+		if (window.getKey(tde::Key::W))
 		{/*
 			camPos.z += 0.1;*/
 			cameraPos += cameraSpeed * cameraFront;
 		}
-		if (glfwGetKey(window.getRawPointer(), GLFW_KEY_S))
+		if (window.getKey(tde::Key::S))
 		{
 			cameraPos -= cameraSpeed * cameraFront;
 		}
-		if (glfwGetKey(window.getRawPointer(), GLFW_KEY_A))
+		if (window.getKey(tde::Key::A))
 		{
 			cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 		}
-		if (glfwGetKey(window.getRawPointer(), GLFW_KEY_D))
+		if (window.getKey(tde::Key::D))
 		{
 			cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 		}

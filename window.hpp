@@ -10,16 +10,31 @@ using namespace glow::basicTypes;
 #include <expected>
 #include <string>
 
-
 namespace tde
 {
+    enum Key : i32
+    {
+        W = GLFW_KEY_W,
+        A = GLFW_KEY_A,
+        S = GLFW_KEY_S,
+        D = GLFW_KEY_D,
+        Escape = GLFW_KEY_ESCAPE,
+    };
+
+    enum KeyPressStatus
+    {
+        Pressed = GLFW_PRESS,
+        Released = GLFW_RELEASE,
+    };
+
+
     class Window
     {
-
     public:
 
-        Window() noexcept = default;
-        Window(const Window &other) noexcept = default;
+        Window() noexcept;
+        Window(const Window &other) noexcept = delete;
+        Window(Window &&other) noexcept;
         ~Window() noexcept;
 
         static auto create(
@@ -28,7 +43,10 @@ namespace tde
             std::string_view title
         ) noexcept -> std::expected<Window, std::string>;
 
-        auto getRawPointer() const noexcept -> GLFWwindow *;
+        [[nodiscard]] auto shouldClose() const noexcept -> bool;
+        [[nodiscard]] auto getKey(Key k) const noexcept -> KeyPressStatus;
+
+        [[nodiscard]] auto getRawPointer() const noexcept -> GLFWwindow *;
         void swapBuffer() const noexcept;
         static void pollEvents() noexcept;
 
