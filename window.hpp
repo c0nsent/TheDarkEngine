@@ -20,6 +20,7 @@ namespace tde
 
         Window() noexcept = default;
         Window(const Window &other) noexcept = default;
+        ~Window() noexcept;
 
         static auto create(
             u32 width,
@@ -27,8 +28,9 @@ namespace tde
             std::string_view title
         ) noexcept -> std::expected<Window, std::string>;
 
+        auto getRawPointer() const noexcept -> GLFWwindow *;
         void swapBuffer() const noexcept;
-        void pollEvents() const noexcept;
+        static void pollEvents() noexcept;
 
     private:
         explicit Window(GLFWwindow *glfwWin) noexcept;

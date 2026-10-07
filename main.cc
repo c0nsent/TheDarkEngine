@@ -191,14 +191,8 @@ auto main() -> int
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 
-	ImGui_ImplGlfw_InitForOpenGL(window, true);
+	ImGui_ImplGlfw_InitForOpenGL(window.getRawPointer(), true);
 	ImGui_ImplOpenGL3_Init();
-
-	if (not gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress)))
-	{
-		std::cerr << "Failed to initialize GLAD.\n";
-		return 1;
-	};
 
 	glEnable(GL_DEPTH_TEST);
 
@@ -311,12 +305,12 @@ auto main() -> int
 	glUniform1i(glGetUniformLocation(shaderProgram.getId(), "texture1"), 0);
 
 
-	glfwSetCursorPosCallback(window, cursorPositionCallback);
-	glfwSetScrollCallback(window, scroll_callback);
+	glfwSetCursorPosCallback(window.getRawPointer(), cursorPositionCallback);
+	glfwSetScrollCallback(window.getRawPointer(), scroll_callback);
 
 	if (glfwRawMouseMotionSupported())
 	{
-		glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+		glfwSetInputMode(window.getRawPointer(), GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 	}
 
 	auto width{WIDTH};
@@ -328,9 +322,9 @@ auto main() -> int
 
 	f32 deltaTime{}, lastFrame{};
 
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetInputMode(window.getRawPointer(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
-	while (not glfwWindowShouldClose(window))
+	while (not glfwWindowShouldClose(window.getRawPointer()))
 	{
 		const f32 currentFrame{ static_cast<f32>(glfwGetTime())};
 		deltaTime = currentFrame - lastFrame;
@@ -338,20 +332,20 @@ auto main() -> int
 
 		const f32 cameraSpeed = 2.5f * deltaTime;
 
-		if (glfwGetKey(window, GLFW_KEY_W))
+		if (glfwGetKey(window.getRawPointer(), GLFW_KEY_W))
 		{/*
 			camPos.z += 0.1;*/
 			cameraPos += cameraSpeed * cameraFront;
 		}
-		if (glfwGetKey(window, GLFW_KEY_S))
+		if (glfwGetKey(window.getRawPointer(), GLFW_KEY_S))
 		{
 			cameraPos -= cameraSpeed * cameraFront;
 		}
-		if (glfwGetKey(window, GLFW_KEY_A))
+		if (glfwGetKey(window.getRawPointer(), GLFW_KEY_A))
 		{
 			cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 		}
-		if (glfwGetKey(window, GLFW_KEY_D))
+		if (glfwGetKey(window.getRawPointer(), GLFW_KEY_D))
 		{
 			cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
 		}
@@ -420,8 +414,8 @@ auto main() -> int
 		const auto end{ std::chrono::high_resolution_clock::now() };
 		duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
 
-		glfwSwapBuffers(window);
-		glfwPollEvents();
+		window.swapBuffer();
+		tde::Window::pollEvents();
 	}
 	glDeleteProgram(shaderProgram.getId());
 	glDeleteVertexArrays(1, &vao);
@@ -430,7 +424,4 @@ auto main() -> int
     ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
 	ImGui::DestroyContext();
-
-	glfwDestroyWindow(window);
-	glfwTerminate();
 }

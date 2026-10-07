@@ -4,6 +4,12 @@
 
 namespace tde
 {
+    Window::~Window() noexcept
+    {
+        glfwDestroyWindow(this->m_window);
+        glfwTerminate();
+    }
+
     auto Window::create(
         const u32 width,
         const u32 height,
@@ -60,12 +66,17 @@ namespace tde
         return window;
     }
 
+    auto Window::getRawPointer() const noexcept -> GLFWwindow*
+    {
+        return this->m_window;
+    }
+
     void Window::swapBuffer() const noexcept
     {
         glfwSwapBuffers(this->m_window);
     }
 
-    void Window::pollEvents() const noexcept
+    void Window::pollEvents() noexcept
     {
         glfwPollEvents();
     }
