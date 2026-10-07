@@ -5,9 +5,6 @@
 
 namespace ig=ImGui;
 
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
-
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 
@@ -20,12 +17,13 @@ namespace ig=ImGui;
 #include "glow/shader-program.hpp"
 #include "glow/shader.hpp"
 
+#include "window.hpp"
+
 using namespace glow::basicTypes;
 
 #include <array>
 #include <iostream>
 #include <chrono>
-#include <forward_list>
 #include <algorithm>
 
 constexpr i32 WIDTH{1920};
@@ -74,19 +72,6 @@ private:
 	std::chrono::microseconds m_sum;
 	size_t index;
 };
-
-
-static void glfwErrorCallback(const i32 error, const char *description) noexcept
-{
-	std::cerr << "[GLFW] Error " << error << ": "
-		<< (description ? description : "unknown error") << '\n';
-}
-
-
-static void framebufferSizeCallback(GLFWwindow *, const i32 width, const i32 height) noexcept
-{
-	glViewport(0, 0, width, height);
-}
 
 
 static auto createTexture(const char *path) noexcept -> u32
@@ -141,95 +126,70 @@ static void setMatrixValue(const glow::ShaderProgram &sp, const char *matrixName
 }
 
 
-struct Camera
+glm::vec3 cameraPos{ 0.f, 0.f, 3.f };
+glm::vec3 cameraFront{ 0.0f, 0.0f, -1.f };
+glm::vec3 cameraUp{ 0.f , 1.f, 0.f };
+
+f32 yaw{ -90.f };
+f32 pitch{ 0.f };
+glm::vec2 lastPos = { WIDTH / 2, HEIGHT / 2 };
+bool firstMouseInput = true;
+f32 zoom = 45.f;
+
+static void cursorPositionCallback(GLFWwindow *window, const f64 xPos, const f64 yPos)
 {
-	glm::vec2 cursorOrigin;
-	glm::vec2 cursorPos;
-	glm::vec2 offset;
-	glm::vec2 camPos;
-
-	bool isButtonAlreadyPressed;
-};
-
-
-struct CameraNew
-{
-	glm::vec3 pos;
-	glm::vec3 front;
-	glm::vec3 up;
-
-	bool isButtonPressed = false;
-	glm::vec2 cursorPos;
-	glm::vec2 cursorOrigin;
-	glm::vec2 offset;
-};
-
-
-/*static void cursorPositionCallback(GLFWwindow *window, const f64 xPos, const f64 yPos)
-{
-	auto *const cam { static_cast<CameraNew *>(glfwGetWindowUserPointer(window)) };
-	if (not cam) return;
-
-	cam->cursorPos = {xPos, yPos};
-
-	if (cam->isButtonPressed)
+	if (firstMouseInput)
 	{
-		cam->offset = cam->cursorPos - cam->cursorOrigin;
+		lastPos = { xPos, yPos };
+		firstMouseInput = false;
 	}
+
+	glm::vec2 offset{ xPos - lastPos.x, lastPos.y - yPos };
+	lastPos = { xPos, yPos };
+
+	constexpr f32 sensitivity{ 0.1f };
+	offset *= sensitivity;
+
+	yaw += offset.x;
+	pitch += offset.y;
+
+	pitch = std::clamp(pitch, -89.f, 89.f);
+
+
+	glm::vec3 direction;
+	direction.x = glm::cos(glm::radians(yaw)) * glm::cos(glm::radians(pitch));
+	direction.y = glm::sin(glm::radians(pitch));
+	direction.z = glm::sin(glm::radians(yaw)) * glm::cos(glm::radians(pitch));
+	cameraFront = glm::normalize(direction);
+}
+
+void scroll_callback(GLFWwindow *window, double xOffset, double yOffset)
+{
+	zoom -= static_cast<f32>(yOffset);
+
+	zoom = std::clamp(zoom, 1.f , 45.f);
 }
 
 
 static void mouseButtonCallback(GLFWwindow *window, const i32 button, const i32 action,	[[maybe_unused]] i32 mods)
 {
-	if (button != GLFW_MOUSE_BUTTON_RIGHT) return;
 
-	auto *const cam{ static_cast<CameraNew *>(glfwGetWindowUserPointer(window)) };
-	if (not cam ) return;
-
-	if (action == GLFW_PRESS)
-	{
-
-
-		cam->isButtonAlreadyPressed = true;
-		cam->cursorOrigin = cam->cursorPos;
-	}
-	else if (action == GLFW_RELEASE)
-	{
-		cam->isButtonAlreadyPressed = false;
-
-		cam->camPos += cam->offset;
-		cam->offset = {0, 0};
-	}
-}*/
-
+}
 
 
 auto main() -> int
 {
-	glfwSetErrorCallback(glfwErrorCallback);
-
-	if (not glfwInit()) return EXIT_FAILURE;
-
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-	GLFWwindow *window{glfwCreateWindow(WIDTH, HEIGHT, TITLE, glfwGetPrimaryMonitor(), nullptr)};
-	if (window == nullptr)
+	auto result{ tde::Window::create(WIDTH, HEIGHT, TITLE)};
+	if (not result)
 	{
-		std::cerr << "Failed to create window\n";
-		glfwTerminate();
-		return EXIT_FAILURE;
+		std::cerr << result.error() << std::endl;
 	}
-	glfwMakeContextCurrent(window);
-	glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
+
+	auto window = *result;
 
 
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
-	/*ImGuiIO &io{ImGui::GetIO()};
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;*/
 
 	ImGui_ImplGlfw_InitForOpenGL(window, true);
 	ImGui_ImplOpenGL3_Init();
@@ -239,6 +199,8 @@ auto main() -> int
 		std::cerr << "Failed to initialize GLAD.\n";
 		return 1;
 	};
+
+	glEnable(GL_DEPTH_TEST);
 
 	const glow::ShaderProgram shaderProgram{std::make_tuple(
 		glow::VertexShader{"shaders/shader.vert"},
@@ -348,41 +310,29 @@ auto main() -> int
 	shaderProgram.use();
 	glUniform1i(glGetUniformLocation(shaderProgram.getId(), "texture1"), 0);
 
-	//Camera camera { .cursorOrigin = {0, 0}, .cursorPos = {0, 0 }, .offset = {0, 0 }, .camPos =  {0, 0}};
-	//glfwSetWindowUserPointer(window, &camera);
 
-	CameraNew cam;
-	/*glfwSetWindowUserPointer(window, &cam);
 	glfwSetCursorPosCallback(window, cursorPositionCallback);
-	glfwSetMouseButtonCallback(window, mouseButtonCallback);*/
+	glfwSetScrollCallback(window, scroll_callback);
 
 	if (glfwRawMouseMotionSupported())
 	{
 		glfwSetInputMode(window, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
 	}
 
-    f32 fov{45.f};
 	auto width{WIDTH};
 	auto height{HEIGHT};
-
-    glEnable(GL_DEPTH_TEST);
 
 	FpsCounter counter;
 	std::chrono::microseconds duration{0};
 
-	glm::vec3 cameraPos{ 0.f, 0.f, 3.f };
-	glm::vec3 cameraFront{ 0.0f, 0.0f, -1.f };
-	glm::vec3 cameraUp{ 0.f , 1.f, 0.f };
 
 	f32 deltaTime{}, lastFrame{};
 
-	glm::vec3 direction;
-	direction.x = glm::cos(glm::radians(yaw))
-
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 
 	while (not glfwWindowShouldClose(window))
 	{
-		float currentFrame = glfwGetTime();
+		const f32 currentFrame{ static_cast<f32>(glfwGetTime())};
 		deltaTime = currentFrame - lastFrame;
 		lastFrame = currentFrame;
 
@@ -418,7 +368,7 @@ auto main() -> int
 		ig::Text("%d fps", counter.count());
 
 		ig::SeparatorText("Projection");
-		ig::SliderFloat("FOV", &fov, 20.f, 360.f);
+		ig::SliderFloat("FOV", &zoom, 20.f, 360.f);
 		ig::SliderInt("Width", &width, 720, 1920);
 		ig::SliderInt("Height", &height, 400, 1080);
 
@@ -431,18 +381,13 @@ auto main() -> int
 		glClearColor(0.2f, 0.3f, 0.3f, 1.f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		/*
-		auto view = glm::translate(glm::mat4{1.f}, camPos);*/
-		/*view = glm::rotate(view, glm::radians(camDirection.y), {1.f, 0.f, 0.f});
-		view = glm::rotate(view, glm::radians(camDirection.x), {0.f, 1.f, 0.f});*/
-
 		const auto view{ glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp) };
 
 		setMatrixValue(shaderProgram, "view", view);
 
 		const auto perspectiveProjection
 		{ glm::perspective(
-			glm::radians(fov),
+			glm::radians(zoom),
 			static_cast<f32>(width)/static_cast<f32>(height),
 			0.1f,
 			100.f
