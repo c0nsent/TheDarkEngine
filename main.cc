@@ -165,17 +165,11 @@ static void cursorPositionCallback(GLFWwindow *window, const f64 xPos, const f64
 	cameraFront = glm::normalize(direction);
 }
 
-void scroll_callback(GLFWwindow *window, double xOffset, double yOffset)
+static void scroll_callback(GLFWwindow *, double , const double yOffset)
 {
 	zoom -= static_cast<f32>(yOffset);
 
 	zoom = std::clamp(zoom, 1.f , 45.f);
-}
-
-
-static void mouseButtonCallback(GLFWwindow *window, const i32 button, const i32 action,	[[maybe_unused]] i32 mods)
-{
-
 }
 
 
@@ -185,9 +179,10 @@ auto main() -> int
 	if (not result)
 	{
 		std::cerr << result.error() << std::endl;
+		return EXIT_FAILURE;
 	}
 
-	const auto window{std::move(*result)};
+	const auto window{std::move(result.value())};
 
 
 	IMGUI_CHECKVERSION();
@@ -306,8 +301,6 @@ auto main() -> int
 	shaderProgram.use();
 	glUniform1i(glGetUniformLocation(shaderProgram.getId(), "texture1"), 0);
 
-
-	glfwSetCursorPosCallback(window.getRawPointer(), cursorPositionCallback);
 	glfwSetScrollCallback(window.getRawPointer(), scroll_callback);
 
 	if (glfwRawMouseMotionSupported())
@@ -324,7 +317,7 @@ auto main() -> int
 
 	f32 deltaTime{}, lastFrame{};
 
-	glfwSetInputMode(window.getRawPointer(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	bool isCamMovDisabled = true;
 
 	while (not window.shouldClose())
 	{
@@ -350,6 +343,22 @@ auto main() -> int
 		if (window.getKey(tde::Key::D))
 		{
 			cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+		}
+		if (window.getKey(tde::Key::Escape))
+		{
+			if (isCamMovDisabled)
+			{
+				glfwSetInputMode(window.getRawPointer(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+				isCamMovDisabled = false;
+				glfwSetCursorPosCallback(window.getRawPointer(), nullptr);
+			}
+			else
+			{
+				glfwSetInputMode(window.getRawPointer(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+				isCamMovDisabled = true;
+				glfwSetCursorPosCallback(window.getRawPointer(), cursorPositionCallback);
+			}
+
 		}
 
 		counter.addValue(duration);

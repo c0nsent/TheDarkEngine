@@ -5,9 +5,7 @@
 
 namespace tde
 {
-    Window::Window() noexcept
-    {
-    }
+    Window::Window() noexcept : m_window{nullptr} {}
 
     Window::Window(Window&& other) noexcept
         : m_window{other.m_window}
@@ -17,6 +15,8 @@ namespace tde
 
     Window::~Window() noexcept
     {
+        if (this->m_window == nullptr) return;
+
         glfwDestroyWindow(m_window);
         glfwTerminate();
     }
@@ -40,18 +40,14 @@ namespace tde
         glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-        auto glfwWindow {
-            glfwCreateWindow(
-                static_cast<i32>(width),
-                static_cast<i32>(height),
-                title.data(),
-                glfwGetPrimaryMonitor(),
-                nullptr
-                )
-        };
-
-        Window window {};
-        window.m_window = glfwWindow;
+        Window window;
+        window.m_window = glfwCreateWindow(
+            static_cast<i32>(width),
+            static_cast<i32>(height),
+            title.data(),
+            glfwGetPrimaryMonitor(),
+            nullptr
+        );
 
         if (not window.m_window)
         {
@@ -61,9 +57,9 @@ namespace tde
 
         glfwMakeContextCurrent(window.m_window);
         glfwSetFramebufferSizeCallback(window.m_window,
-            [] (GLFWwindow *, const i32 width, const i32 height)
+            [] (GLFWwindow *, const i32 w, const i32 h)
             {
-                glViewport(0, 0, width, height);
+                glViewport(0, 0, w, h);
             }
         );
 
