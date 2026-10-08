@@ -30,6 +30,7 @@ target_include_directories(stb INTERFACE ${STB_INCLUDE_DIR})
 add_executable(
         ${PROJECT_NAME}
         window.cc window.hpp
+        camera.cc camera.hpp
         main.cc
 )
 

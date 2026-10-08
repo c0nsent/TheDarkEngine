@@ -183,8 +183,7 @@ auto main() -> int
 	}
 
 	const auto window{std::move(result.value())};
-
-
+	
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 
@@ -201,65 +200,62 @@ auto main() -> int
 
 	constexpr auto vertices{ std::to_array<f32>({
 	    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-            0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-            0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-            0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-           -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-           -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+        0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+        0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+       -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+       -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
 
-           -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-            0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-            0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-            0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-           -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-           -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+       -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+        0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+        0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+       -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+       -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
 
-           -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-           -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-           -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-           -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-           -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-           -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+       -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+       -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+       -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+       -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+       -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+       -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
 
-            0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-            0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-            0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-            0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-            0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-            0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+        0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
 
-           -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-            0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-            0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-            0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-           -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-           -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+       -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+        0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+        0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+        0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+       -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+       -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
 
-           -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-            0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-            0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-            0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-           -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-           -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
-
+       -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+        0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+        0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+       -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+       -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
 	})};
 
-    constexpr glm::vec3 cubePositions[] = {
-        glm::vec3( 0.0f,  0.0f,  0.0f),
-        glm::vec3( 2.0f,  5.0f, -15.0f),
-        glm::vec3(-1.5f, -2.2f, -2.5f),
-        glm::vec3(-3.8f, -2.0f, -12.3f),
-        glm::vec3( 2.4f, -0.4f, -3.5f),
-        glm::vec3(-1.7f,  3.0f, -7.5f),
-        glm::vec3( 1.3f, -2.0f, -2.5f),
-        glm::vec3( 1.5f,  2.0f, -2.5f),
-        glm::vec3( 1.5f,  0.2f, -1.5f),
-        glm::vec3(-1.3f,  1.0f, -1.5f)
-    };
+    constexpr auto cubePositions { std::to_array<glm::vec3>({
+		{ 0.0f,  0.0f,  0.0f},
+		{ 2.0f,  5.0f, -15.0f},
+		{-1.5f, -2.2f, -2.5f},
+		{-3.8f, -2.0f, -12.3f},
+		{2.4f, -0.4f, -3.5f},
+		{-1.7f,  3.0f, -7.5f},
+		{ 1.3f, -2.0f, -2.5f},
+		{1.5f,  2.0f, -2.5f},
+		{ 1.5f,  0.2f, -1.5f},
+		{-1.3f,  1.0f, -1.5f}
+	})};
 
 	stbi_set_flip_vertically_on_load(true);
-
-    glow::Error::printIfError();
 
 	const auto obamaTexture{createTexture("textures/obama.png")};
 
@@ -314,10 +310,7 @@ auto main() -> int
 	FpsCounter counter;
 	std::chrono::microseconds duration{0};
 
-
 	f32 deltaTime{}, lastFrame{};
-
-	bool isCamMovDisabled = true;
 
 	while (not window.shouldClose())
 	{
@@ -328,8 +321,7 @@ auto main() -> int
 		const f32 cameraSpeed = 2.5f * deltaTime;
 
 		if (window.getKey(tde::Key::W))
-		{/*
-			camPos.z += 0.1;*/
+		{
 			cameraPos += cameraSpeed * cameraFront;
 		}
 		if (window.getKey(tde::Key::S))
@@ -346,19 +338,13 @@ auto main() -> int
 		}
 		if (window.getKey(tde::Key::Escape))
 		{
-			if (isCamMovDisabled)
-			{
-				glfwSetInputMode(window.getRawPointer(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-				isCamMovDisabled = false;
-				glfwSetCursorPosCallback(window.getRawPointer(), nullptr);
-			}
-			else
-			{
-				glfwSetInputMode(window.getRawPointer(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-				isCamMovDisabled = true;
-				glfwSetCursorPosCallback(window.getRawPointer(), cursorPositionCallback);
-			}
-
+			glfwSetInputMode(window.getRawPointer(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			glfwSetCursorPosCallback(window.getRawPointer(), nullptr);
+		}
+		if (window.getKey(tde::Key::Q))
+		{
+			glfwSetInputMode(window.getRawPointer(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+			glfwSetCursorPosCallback(window.getRawPointer(), cursorPositionCallback);
 		}
 
 		counter.addValue(duration);

@@ -12,8 +12,12 @@ using namespace glow::basicTypes;
 
 namespace tde
 {
+
+    class Camera;
+
     enum Key : i32
     {
+        Q = GLFW_KEY_Q,
         W = GLFW_KEY_W,
         A = GLFW_KEY_A,
         S = GLFW_KEY_S,
@@ -35,6 +39,7 @@ namespace tde
         Window() noexcept;
         Window(const Window &other) noexcept = delete;
         Window(Window &&other) noexcept;
+        auto operator=(Window &&other) noexcept -> Window &;
         ~Window() noexcept;
 
         static auto create(
@@ -45,6 +50,7 @@ namespace tde
 
         [[nodiscard]] auto shouldClose() const noexcept -> bool;
         [[nodiscard]] auto getKey(Key k) const noexcept -> KeyPressStatus;
+        [[nodiscard]] auto createCamera() const noexcept -> std::expected<Camera, std::string>;
 
         [[nodiscard]] auto getRawPointer() const noexcept -> GLFWwindow *;
         void swapBuffer() const noexcept;

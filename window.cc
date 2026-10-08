@@ -7,10 +7,18 @@ namespace tde
 {
     Window::Window() noexcept : m_window{nullptr} {}
 
-    Window::Window(Window&& other) noexcept
+    Window::Window(Window &&other) noexcept
         : m_window{other.m_window}
     {
         other.m_window = nullptr;
+    }
+
+    auto Window::operator=(Window &&other) noexcept -> Window&
+    {
+        this->m_window = other.m_window;
+        other.m_window = nullptr;
+
+        return *this;
     }
 
     Window::~Window() noexcept
