@@ -3,18 +3,15 @@
 #include "glow/basic-types.hpp"
 using namespace glow::basicTypes;
 
-
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
 #include <expected>
 #include <string>
 
+
 namespace tde
 {
-
-    class Camera;
-
     enum Key : i32
     {
         Q = GLFW_KEY_Q,
@@ -50,7 +47,6 @@ namespace tde
 
         [[nodiscard]] auto shouldClose() const noexcept -> bool;
         [[nodiscard]] auto getKey(Key k) const noexcept -> KeyPressStatus;
-        [[nodiscard]] auto createCamera() const noexcept -> std::expected<Camera, std::string>;
 
         [[nodiscard]] auto getRawPointer() const noexcept -> GLFWwindow *;
         void swapBuffer() const noexcept;

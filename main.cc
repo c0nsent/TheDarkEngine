@@ -128,51 +128,6 @@ static void setMatrixValue(const glow::ShaderProgram &sp, const char *matrixName
 }
 
 
-glm::vec3 cameraPos{ 0.f, 0.f, 3.f };
-glm::vec3 cameraFront{ 0.0f, 0.0f, -1.f };
-glm::vec3 cameraUp{ 0.f , 1.f, 0.f };
-
-f32 yaw{ -90.f };
-f32 pitch{ 0.f };
-glm::vec2 lastPos = { WIDTH / 2, HEIGHT / 2 };
-bool firstMouseInput = true;
-f32 zoom = 45.f;
-
-static void cursorPositionCallback(GLFWwindow *window, const f64 xPos, const f64 yPos)
-{
-	if (firstMouseInput)
-	{
-		lastPos = { xPos, yPos };
-		firstMouseInput = false;
-	}
-
-	glm::vec2 offset{ xPos - lastPos.x, lastPos.y - yPos };
-	lastPos = { xPos, yPos };
-
-	constexpr f32 sensitivity{ 0.1f };
-	offset *= sensitivity;
-
-	yaw += offset.x;
-	pitch += offset.y;
-
-	pitch = std::clamp(pitch, -89.f, 89.f);
-
-
-	glm::vec3 direction;
-	direction.x = glm::cos(glm::radians(yaw)) * glm::cos(glm::radians(pitch));
-	direction.y = glm::sin(glm::radians(pitch));
-	direction.z = glm::sin(glm::radians(yaw)) * glm::cos(glm::radians(pitch));
-	cameraFront = glm::normalize(direction);
-}
-
-static void scroll_callback(GLFWwindow *, double , const double yOffset)
-{
-	zoom -= static_cast<f32>(yOffset);
-
-	zoom = std::clamp(zoom, 1.f , 45.f);
-}
-
-
 auto main() -> int
 {
 	auto result{ tde::Window::create(WIDTH, HEIGHT, TITLE)};
@@ -297,16 +252,6 @@ auto main() -> int
 	shaderProgram.use();
 	glUniform1i(glGetUniformLocation(shaderProgram.getId(), "texture1"), 0);
 
-	glfwSetScrollCallback(window.getRawPointer(), scroll_callback);
-
-	if (glfwRawMouseMotionSupported())
-	{
-		glfwSetInputMode(window.getRawPointer(), GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-	}
-
-	auto width{WIDTH};
-	auto height{HEIGHT};
-
 	FpsCounter counter;
 	std::chrono::microseconds duration{0};
 
@@ -320,7 +265,7 @@ auto main() -> int
 
 		const f32 cameraSpeed = 2.5f * deltaTime;
 
-		if (window.getKey(tde::Key::W))
+		/*if (window.getKey(tde::Key::W))
 		{
 			cameraPos += cameraSpeed * cameraFront;
 		}
@@ -345,7 +290,7 @@ auto main() -> int
 		{
 			glfwSetInputMode(window.getRawPointer(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 			glfwSetCursorPosCallback(window.getRawPointer(), cursorPositionCallback);
-		}
+		}*/
 
 		counter.addValue(duration);
 		const auto start{ std::chrono::high_resolution_clock::now() };
@@ -358,10 +303,10 @@ auto main() -> int
 
 		ig::Text("%d fps", counter.count());
 
-		ig::SeparatorText("Projection");
+		/*ig::SeparatorText("Projection");
 		ig::SliderFloat("FOV", &zoom, 20.f, 360.f);
 		ig::SliderInt("Width", &width, 720, 1920);
-		ig::SliderInt("Height", &height, 400, 1080);
+		ig::SliderInt("Height", &height, 400, 1080);*/
 
 		ig::Separator();
 		//TODO: Решить траблы с кириллицей в ImGui
