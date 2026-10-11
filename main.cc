@@ -1,8 +1,6 @@
-#include <imgui.h>
-#include <imgui_impl_glfw.h>
-#include <imgui_impl_opengl3.h>
+#include "glad/glad.h"
 
-namespace ig=ImGui;
+#include <SFML/Window.hpp>
 
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -17,8 +15,6 @@ namespace ig=ImGui;
 #include "glow/shader-program.hpp"
 #include "glow/shader.hpp"
 
-#include "window.hpp"
-
 using namespace glow::basicTypes;
 
 #include <array>
@@ -26,6 +22,7 @@ using namespace glow::basicTypes;
 #include <chrono>
 #include <algorithm>
 #include <numeric>
+#include <optional>
 
 
 constexpr i32 WIDTH{1920};
@@ -33,119 +30,90 @@ constexpr i32 HEIGHT{1080};
 constexpr auto TITLE{"The Dark Engine"};
 
 
-class FpsCounter
-{
-public:
-
-	FpsCounter() noexcept
-		: m_frameTimes{} , m_sum{0} , index{0}
-	{
-		using namespace std::chrono_literals;
-
-		for (auto &frameTime : m_frameTimes)
-		{
-			frameTime = 0us;
-		}
-	};
-
-	auto addValue(const std::chrono::microseconds frameTime)
-	{
-		m_sum -= m_frameTimes[index];
-		m_sum += frameTime;
-
-		m_frameTimes[index] = frameTime;
-
-		index = (index == m_frameTimes.size() - 1) ?  0 : index + 1;
-	}
-
-	[[nodiscard]] auto count() const noexcept -> u32
-	{
-		using namespace std::chrono_literals;
-
-		const auto avg{ m_sum / m_frameTimes.size() };
-		if ( avg == 0us) [[unlikely]] return 0;
-
-		return 1s / avg;
-	}
-
-private:
-
-	std::array<std::chrono::microseconds, 100> m_frameTimes;
-	std::chrono::microseconds m_sum;
-	size_t index;
-};
-
-
 static auto createTexture(const char *path) noexcept -> u32
 {
-	u32 textureId{0};
+    u32 textureId{0};
 
-	i32 width, height, nrChannels;
-	u8 *imageData{stbi_load(path, &width, &height, &nrChannels, 0)};
-	if (not imageData)
-	{
-		return textureId;
-	}
+    i32 width, height, nrChannels;
+    u8 *imageData{stbi_load(path, &width, &height, &nrChannels, 0)};
+    if (not imageData)
+    {
+        return textureId;
+    }
 
-	glGenTextures(1, &textureId);
-	glBindTexture(GL_TEXTURE_2D, textureId);
+    glGenTextures(1, &textureId);
+    glBindTexture(GL_TEXTURE_2D, textureId);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	const i32 format{nrChannels == 3 ? GL_RGB : GL_RGBA};
+    const i32 format{nrChannels == 3 ? GL_RGB : GL_RGBA};
 
-	glTexImage2D(
-		GL_TEXTURE_2D,
-		0,
-		format,
-		width,
-		height,
-		0,
-		format,
-		GL_UNSIGNED_BYTE,
-		imageData
-	);
-	glGenerateMipmap(GL_TEXTURE_2D);
+    glTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        format,
+        width,
+        height,
+        0,
+        format,
+        GL_UNSIGNED_BYTE,
+        imageData
+    );
+    glGenerateMipmap(GL_TEXTURE_2D);
 
-	stbi_image_free(imageData);
+    stbi_image_free(imageData);
 
-	return textureId;
+    return textureId;
 }
 
 
 static void setMatrixValue(const glow::ShaderProgram &sp, const char *matrixName, const glm::mat4 &matrix) noexcept
 {
-	glUniformMatrix4fv(
-		glGetUniformLocation(sp.getId(), matrixName),
-		1,
-		GL_FALSE,
-		glm::value_ptr(matrix)
-	);
+    glUniformMatrix4fv(
+        glGetUniformLocation(sp.getId(), matrixName),
+        1,
+        GL_FALSE,
+        glm::value_ptr(matrix)
+    );
 }
 
 
-auto main() -> int
+int main()
 {
-	auto result{ tde::Window::create(WIDTH, HEIGHT, TITLE)};
-	if (not result)
-	{
-		std::cerr << result.error() << std::endl;
-		return EXIT_FAILURE;
-	}
+    constexpr sf::ContextSettings settings {
+        .depthBits = 24,
+        .stencilBits = 8,
+        .antiAliasingLevel = 4,
+        .majorVersion = 4,
+        .minorVersion = 6,
+    };
 
-	const auto window{std::move(result.value())};
-	
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
 
-	ImGui_ImplGlfw_InitForOpenGL(window.getRawPointer(), true);
-	ImGui_ImplOpenGL3_Init();
+    sf::Window win{ sf::VideoMode{{WIDTH, HEIGHT}}, TITLE, sf::Style::Default, sf::State::Windowed, settings };
+    win.setVerticalSyncEnabled(true);
 
-	glEnable(GL_DEPTH_TEST);
+    if (not win.setActive())
+    {
+        std::cerr << "Failed to set current window as a target for rendering\n";
+        return EXIT_FAILURE;
+    }
+
+    const int version{ gladLoadGLLoader([] (const char *name) -> void *
+    {
+        return reinterpret_cast<void *>(sf::Context::getFunction(name));
+    })};
+    if (not version)
+    {
+        std::cerr << "Failed to load OpenGL functions\n";
+        return EXIT_FAILURE;
+    }
+
+    glEnable(GL_DEPTH_TEST);
+
 
 	const glow::ShaderProgram shaderProgram{std::make_tuple(
 		glow::VertexShader{"shaders/shader.vert"},
@@ -252,118 +220,69 @@ auto main() -> int
 	shaderProgram.use();
 	glUniform1i(glGetUniformLocation(shaderProgram.getId(), "texture1"), 0);
 
-	FpsCounter counter;
-	std::chrono::microseconds duration{0};
+	sf::Clock clock;
 
-	f32 deltaTime{}, lastFrame{};
 
-	while (not window.shouldClose())
-	{
-		const f32 currentFrame{ static_cast<f32>(glfwGetTime())};
-		deltaTime = currentFrame - lastFrame;
-		lastFrame = currentFrame;
+    bool running{ true };
+    while (running)
+    {
+    	const f32 cameraSpeed = 2.5f * 1;
 
-		const f32 cameraSpeed = 2.5f * deltaTime;
+        while (const auto event{ win.pollEvent()})
+        {
+            if (event->is<sf::Event::Closed>())
+            {
+                running = false;
+            }
+            else if (const auto *resized{ event->getIf<sf::Event::Resized>() })
+            {
+                glViewport(0, 0, resized->size.x, resized->size.y);
+            }
+        }
 
-		/*if (window.getKey(tde::Key::W))
-		{
-			cameraPos += cameraSpeed * cameraFront;
-		}
-		if (window.getKey(tde::Key::S))
-		{
-			cameraPos -= cameraSpeed * cameraFront;
-		}
-		if (window.getKey(tde::Key::A))
-		{
-			cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-		}
-		if (window.getKey(tde::Key::D))
-		{
-			cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-		}
-		if (window.getKey(tde::Key::Escape))
-		{
-			glfwSetInputMode(window.getRawPointer(), GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-			glfwSetCursorPosCallback(window.getRawPointer(), nullptr);
-		}
-		if (window.getKey(tde::Key::Q))
-		{
-			glfwSetInputMode(window.getRawPointer(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-			glfwSetCursorPosCallback(window.getRawPointer(), cursorPositionCallback);
-		}*/
+    	glClearColor(0.2f, 0.3f, 0.3f, 1.f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		counter.addValue(duration);
-		const auto start{ std::chrono::high_resolution_clock::now() };
 
-		ImGui_ImplOpenGL3_NewFrame();
-		ImGui_ImplGlfw_NewFrame();
+    	constexpr auto view = glm::translate(glm::mat4{1.f}, {0.f, 0.f, -3.f});
 
-		ig::NewFrame();
-		ig::Begin(TITLE);
+    	setMatrixValue(shaderProgram, "view", view);
 
-		ig::Text("%d fps", counter.count());
-
-		/*ig::SeparatorText("Projection");
-		ig::SliderFloat("FOV", &zoom, 20.f, 360.f);
-		ig::SliderInt("Width", &width, 720, 1920);
-		ig::SliderInt("Height", &height, 400, 1080);*/
-
-		ig::Separator();
-		//TODO: Решить траблы с кириллицей в ImGui
-		ig::SeparatorText(reinterpret_cast<const char*>(u8"View"));
-
-		ig::End();
-
-		glClearColor(0.2f, 0.3f, 0.3f, 1.f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		const auto view{ glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp) };
-
-		setMatrixValue(shaderProgram, "view", view);
-
-		const auto perspectiveProjection
-		{ glm::perspective(
-			glm::radians(zoom),
-			static_cast<f32>(width)/static_cast<f32>(height),
+    	const auto perspectiveProjection
+    	{ glm::perspective(
+			glm::radians(45.f),
+			static_cast<f32>(win.getSize().x)/static_cast<f32>(win.getSize().y),
 			0.1f,
 			100.f
 		)};
-		setMatrixValue(shaderProgram, "projection", perspectiveProjection);
+    	setMatrixValue(shaderProgram, "projection", perspectiveProjection);
 
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, obamaTexture);
+    	glActiveTexture(GL_TEXTURE0);
+    	glBindTexture(GL_TEXTURE_2D, obamaTexture);
 
-		shaderProgram.use();
-		glBindVertexArray(vao);
-		for (u32 i{0}; i < 10; i++)
-		{
-			auto model = glm::translate(glm::mat4{1.f}, cubePositions[i]);
+    	shaderProgram.use();
+    	glBindVertexArray(vao);
+    	for (u32 i{0}; i < 10; i++)
+    	{
+    		auto model = glm::translate(glm::mat4{1.f}, cubePositions[i]);
 
-			const f32 rotation = (i % 2 == 0) ? 20 * static_cast<f32>(i) : 10 * glfwGetTime() * i;
+    		const f32 rotation = (i % 2 == 0) ? 20 * static_cast<f32>(i) : 10 * i; // здесь была дельта
 
-			model = glm::rotate(model, glm::radians(rotation), {1.f, 0.3f, 0.5f});
+    		model = glm::rotate(model, glm::radians(rotation), {1.f, 0.3f, 0.5f});
 
-			setMatrixValue(shaderProgram, "model", model);
+    		setMatrixValue(shaderProgram, "model", model);
 
-			glDrawArrays(GL_TRIANGLES, 0, 36);
-		}
+    		glDrawArrays(GL_TRIANGLES, 0, 36);
+    	}
 
-		glow::Error::printIfError();
+    	glow::Error::printIfError();
 
-		ImGui::Render();
-		ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        win.display();
+    }
 
-		const auto end{ std::chrono::high_resolution_clock::now() };
-		duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
-
-		window.swapBuffer();
-		tde::Window::pollEvents();
-	}
 	glDeleteProgram(shaderProgram.getId());
 	glDeleteVertexArrays(1, &vao);
-    glDeleteBuffers(1, &vbo);
+	glDeleteBuffers(1, &vbo);
 
-    ImGui_ImplOpenGL3_Shutdown();
-	ImGui_ImplGlfw_Shutdown();
-	ImGui::DestroyContext();
+    return EXIT_SUCCESS;
 }

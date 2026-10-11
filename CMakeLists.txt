@@ -2,16 +2,18 @@ cmake_minimum_required(VERSION 4.2)
 
 project(TheDarkEngine
         LANGUAGES CXX
-        VERSION 0.0.1
+        VERSION 0.0.2
 )
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(glfw3 3.5 REQUIRED)
 find_package(glm REQUIRED)
-find_package(imgui REQUIRED)
-
+find_package(
+        SFML REQUIRED COMPONENTS
+        Graphics
+        System
+)
 add_subdirectory(third-party/glad)
 add_subdirectory(glow)
 
@@ -29,9 +31,7 @@ target_include_directories(stb INTERFACE ${STB_INCLUDE_DIR})
 
 add_executable(
         ${PROJECT_NAME}
-        window.cc window.hpp
-        camera.cc camera.hpp
-        main.cc
+       main.cc
 )
 
 file(GLOB_RECURSE SHADER_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/shaders/*")
@@ -60,10 +60,9 @@ add_custom_target(copy_textures DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/textures_sta
 add_dependencies(${PROJECT_NAME} copy_textures)
 
 target_link_libraries(${PROJECT_NAME}
-        glfw
-        glm::glm
-        imgui::imgui
-        stb
+        SFML::System
+        SFML::Graphics
         glad
         glow
+        glm::glm
 )
