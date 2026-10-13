@@ -1,20 +1,27 @@
 #include "glad/glad.h"
 
+#include <SFML/Graphics/RenderWindow.hpp>
+#include <SFML/System/Clock.hpp>
+#include <SFML/Window/Event.hpp>
 #include <SFML/Window.hpp>
-
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
+
+#include <imgui.h>
+#include <imgui-SFML.h>
+namespace ig = ImGui;
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "camera.hpp"
 #include "glow/basic-types.hpp"
 #include "glow/error.hpp"
 #include "glow/shader-program.hpp"
 #include "glow/shader.hpp"
+
+#include "camera.hpp"
 
 using namespace glow::basicTypes;
 
@@ -94,7 +101,7 @@ int main()
     };
 
 
-    sf::Window win{ sf::VideoMode{{WIDTH, HEIGHT}}, TITLE, sf::Style::Default, sf::State::Windowed, settings };
+    sf::RenderWindow win{ sf::VideoMode{{WIDTH, HEIGHT}}, TITLE, sf::Style::Default, sf::State::Windowed, settings };
     win.setVerticalSyncEnabled(true);
 
     if (not win.setActive())
@@ -102,6 +109,13 @@ int main()
         std::cerr << "Failed to set current window as a target for rendering\n";
         return EXIT_FAILURE;
     }
+
+	win.setFramerateLimit(60);
+	if (not ig::SFML::Init(win))
+	{
+		std::cerr << "Failed to initialize ImGui";
+	}
+
 
     const int version{ gladLoadGLLoader([] (const char *name) -> void *
     {
@@ -222,31 +236,26 @@ int main()
 	glUniform1i(glGetUniformLocation(shaderProgram.getId(), "texture1"), 0);
 
 
-	const auto res{ win.getSize() };
-
-	f32 yaw{ -90.f };
-	f32 pitch{ 0.f };
-	glm::vec2 lastPos{ res.x / 2, res.y / 2 };
-	bool firstMouseInput{true};
-	f32 fov{45.f};
-
-    bool running{ true };
-	sf::Clock clock;
 
 	tde::Camera cam;
-	while (running)
+
+	sf::Clock clock;
+	sf::Clock delta;
+	while (win.isOpen())
     {
 
     	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Q))
     	{
-    		//win.close();
+
     	}
 
         while (const auto event{ win.pollEvent()})
         {
+        	ig::SFML::ProcessEvent(win, *event);
+
             if (event->is<sf::Event::Closed>())
             {
-                running = false;
+                win.close();
             }
             else if (const auto *resized{ event->getIf<sf::Event::Resized>() })
             {
@@ -259,8 +268,15 @@ int main()
             }
         }
 
+		ig::SFML::Update(win, delta.restart());
+		ig::ShowDemoWindow();
+
     	glClearColor(0.2f, 0.3f, 0.3f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+		glEnable(GL_DEPTH_TEST);
+		shaderProgram.use();
+
 
     	cam.calcDirection();
 		auto view {cam.calcPosition(clock.getElapsedTime())};
@@ -271,7 +287,7 @@ int main()
 
     	const auto perspectiveProjection
     	{ glm::perspective(
-			glm::radians(fov),
+			glm::radians(45.f),
 			static_cast<f32>(win.getSize().x)/static_cast<f32>(win.getSize().y),
 			0.1f,
 			100.f
@@ -281,7 +297,6 @@ int main()
     	glActiveTexture(GL_TEXTURE0);
     	glBindTexture(GL_TEXTURE_2D, obamaTexture);
 
-    	shaderProgram.use();
     	glBindVertexArray(vao);
     	for (u32 i{0}; i < 10; i++)
     	{
@@ -295,6 +310,7 @@ int main()
 
     	glow::Error::printIfError();
 
+		ig::SFML::Render(win);
         win.display();
     }
 

@@ -16,7 +16,7 @@ namespace tde
 
     auto Camera::calcPosition(const sf::Time delta) -> glm::mat4
     {
-        const f32 camSpeed{ static_cast<f32>(delta.asMicroseconds())/ 10000000.f };
+        const f32 camSpeed{ 2.f /* static_cast<f32>(delta.asMicroseconds())/ 10000000.f*/ };
 
         using namespace sf::Keyboard;
 
