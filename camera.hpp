@@ -1,26 +1,26 @@
 #pragma once
 
-#include "window.hpp"
-
 #include <glm/glm.hpp>
+#include <SFML/System/Time.hpp>
+#include <SFML/System/Vector2.hpp>
+
+#include "glow/basic-types.hpp"
 
 
 namespace tde
 {
+    using namespace glow::basicTypes;
+
     class Camera
     {
 
-        friend Window;
-
     public:
 
-        explicit Camera(const Window &win) noexcept;
+        Camera() noexcept;
+        auto calcPosition(sf::Time delta) -> glm::mat4;
+        auto calcDirection() -> void;
 
     private:
-
-        static void cursorPosCallback(GLFWwindow *window, f64 xPos, f64 yPos);
-        static void scrollCallback(GLFWwindow *window, f64, f64 yOffset);
-        static void keyCallback(GLFWwindow *window, i32 key, i32 scancode, i32 action, i32 mods);
 
         glm::vec3 m_camPos{ 0.f, 0.f, 3.f };
         glm::vec3 m_camFront{ 0.0f, 0.0f, -1.f };
@@ -28,10 +28,7 @@ namespace tde
 
         f32 m_yaw{ -90.f};
         f32 m_pitch{ 0.f };
-        glm::vec2 m_lastPos{};
+        glm::vec2 m_lastPos;
         bool m_firstMouseInput{true};
-        f32 m_fov{45.f};
-
-        const Window *const m_window;
     };
 }

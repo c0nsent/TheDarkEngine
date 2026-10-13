@@ -10,6 +10,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "camera.hpp"
 #include "glow/basic-types.hpp"
 #include "glow/error.hpp"
 #include "glow/shader-program.hpp"
@@ -220,13 +221,26 @@ int main()
 	shaderProgram.use();
 	glUniform1i(glGetUniformLocation(shaderProgram.getId(), "texture1"), 0);
 
-	sf::Clock clock;
 
+	const auto res{ win.getSize() };
+
+	f32 yaw{ -90.f };
+	f32 pitch{ 0.f };
+	glm::vec2 lastPos{ res.x / 2, res.y / 2 };
+	bool firstMouseInput{true};
+	f32 fov{45.f};
 
     bool running{ true };
-    while (running)
+	sf::Clock clock;
+
+	tde::Camera cam;
+	while (running)
     {
-    	const f32 cameraSpeed = 2.5f * 1;
+
+    	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Q))
+    	{
+    		//win.close();
+    	}
 
         while (const auto event{ win.pollEvent()})
         {
@@ -236,21 +250,28 @@ int main()
             }
             else if (const auto *resized{ event->getIf<sf::Event::Resized>() })
             {
-                glViewport(0, 0, resized->size.x, resized->size.y);
+                glViewport(
+                	0,
+                	0,
+                	static_cast<i32>(resized->size.x),
+                	static_cast<i32>(resized->size.y)
+                );
             }
         }
 
     	glClearColor(0.2f, 0.3f, 0.3f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+    	cam.calcDirection();
+		auto view {cam.calcPosition(clock.getElapsedTime())};
 
-    	constexpr auto view = glm::translate(glm::mat4{1.f}, {0.f, 0.f, -3.f});
+		setMatrixValue(shaderProgram, "view", view);
 
-    	setMatrixValue(shaderProgram, "view", view);
+    	glow::Error::printIfError();
 
     	const auto perspectiveProjection
     	{ glm::perspective(
-			glm::radians(45.f),
+			glm::radians(fov),
 			static_cast<f32>(win.getSize().x)/static_cast<f32>(win.getSize().y),
 			0.1f,
 			100.f
@@ -265,11 +286,8 @@ int main()
     	for (u32 i{0}; i < 10; i++)
     	{
     		auto model = glm::translate(glm::mat4{1.f}, cubePositions[i]);
-
-    		const f32 rotation = (i % 2 == 0) ? 20 * static_cast<f32>(i) : 10 * i; // здесь была дельта
-
+    		const f32 rotation = (i % 2 == 0) ? 20 * static_cast<f32>(i) : i * (static_cast<f32>(clock.getElapsedTime().asMicroseconds()) / 100000); // здесь была дельта
     		model = glm::rotate(model, glm::radians(rotation), {1.f, 0.3f, 0.5f});
-
     		setMatrixValue(shaderProgram, "model", model);
 
     		glDrawArrays(GL_TRIANGLES, 0, 36);

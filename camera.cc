@@ -1,81 +1,63 @@
 #include "camera.hpp"
 
+
 #include <algorithm>
+#include <glm/ext/matrix_transform.hpp>
+#include <SFML/Window/Keyboard.hpp>
+#include <SFML/Window/Mouse.hpp>
 
 
 namespace tde
 {
-    Camera::Camera(const Window &win) noexcept
-        : m_window{ &win }
+    Camera::Camera() noexcept
+        : m_lastPos{ sf::Mouse::getPosition().x, sf::Mouse::getPosition().y }
     {
-        i32 width, height;
-        glfwGetWindowSize(win.getRawPointer(), &width, &height);
-        m_lastPos = { width, height };
-
-        if (glfwRawMouseMotionSupported())
-        {
-            glfwSetInputMode(win.getRawPointer(), GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-        }
-
-        glfwSetWindowUserPointer(win.getRawPointer(), this);
-        glfwSetCursorPosCallback(win.getRawPointer(), cursorPosCallback);
-        glfwSetScrollCallback(win.getRawPointer(), scrollCallback);
-        glfwSetKeyCallback(win.getRawPointer(), keyCallback);
     }
 
-    void Camera::cursorPosCallback(GLFWwindow* window, f64 xPos, f64 yPos)
+    auto Camera::calcPosition(const sf::Time delta) -> glm::mat4
     {
-        auto cam{ static_cast<Camera *>(glfwGetWindowUserPointer(window)) };
+        const f32 camSpeed{ static_cast<f32>(delta.asMicroseconds())/ 10000000.f };
 
-        if (cam->m_firstMouseInput)
+        using namespace sf::Keyboard;
+
+        if (isKeyPressed(Key::W))
         {
-            cam->m_lastPos = { xPos, yPos };
-            cam->m_firstMouseInput = false;
+            m_camPos += camSpeed * m_camFront;
+        }
+        if (isKeyPressed(Key::S))
+        {
+            m_camPos -= camSpeed * m_camFront;
+        }
+        if (isKeyPressed(Key::A))
+        {
+            m_camPos -= glm::normalize(glm::cross(m_camFront, m_camUp)) * camSpeed;
+        }
+        if (isKeyPressed(Key::D))
+        {
+            m_camPos += glm::normalize(glm::cross(m_camFront, m_camUp)) * camSpeed;
         }
 
-        glm::vec2 offset{ xPos - cam->m_lastPos.x, cam->m_lastPos.y - yPos };
-        cam->m_lastPos = { xPos, yPos };
+        return glm::lookAt(m_camPos, m_camPos + m_camFront, m_camUp);
+    }
+
+    auto Camera::calcDirection() -> void
+    {
+        const glm::vec2 current{sf::Mouse::getPosition().x, sf::Mouse::getPosition().y};
+        auto offset {current - m_lastPos};
+        m_lastPos = current;
 
         constexpr f32 sensitivity{ 0.1f };
         offset *= sensitivity;
 
-        cam->m_yaw += offset.x;
-        cam->m_pitch += offset.y;
+        m_yaw += offset.x;
+        m_yaw += offset.y;
 
-        cam->m_pitch = std::clamp(cam->m_pitch, -89.f, 89.f);
+        m_pitch = std::clamp(m_pitch, -89.f, 89.f);
 
-
-        const glm::vec3 direction {
-            glm::cos(glm::radians(cam->m_yaw)) * glm::cos(glm::radians(cam->m_pitch)),
-            glm::sin(glm::radians(cam->m_pitch)),
-            glm::sin(glm::radians(cam->m_yaw)) * glm::cos(glm::radians(cam->m_pitch))
-        };
-
-        cam->m_camFront = glm::normalize(direction);
-    }
-
-    void Camera::scrollCallback(GLFWwindow* window, f64, const f64 yOffset)
-    {
-        auto cam{ static_cast<Camera *>(glfwGetWindowUserPointer(window)) };
-
-        cam->m_fov -= static_cast<f32>(yOffset);
-        cam->m_fov = std::clamp(cam->m_fov, 1.f, 45.f);
-    }
-
-    void Camera::keyCallback(GLFWwindow* window, i32 key, i32 scancode, i32 action, i32 mods)
-    {
-        auto cam{ static_cast<Camera *>(glfwGetWindowUserPointer(window)) };
-
-        static f32 lastFrame{};
-        const f32 currentFrame{ static_cast<f32>(glfwGetTime()) };
-        static f32 deltaTime = currentFrame - lastFrame;
-        lastFrame = currentFrame;
-
-        const f32 cameraSpeed = 2.5f * deltaTime;
-
-        if (cam->m_window->getKey(tde::Key::W))
-        {
-            cam->m_camPos += cameraSpeed * cam->m_camFront;
-        }
+        glm::vec3 direction;
+        direction.x = glm::cos(glm::radians(m_yaw)) * glm::cos(glm::radians(m_pitch));
+        direction.y = glm::sin(glm::radians(m_pitch));
+        direction.z = glm::sin(glm::radians(m_yaw)) * glm::cos(glm::radians(m_pitch));
+        m_camFront = glm::normalize(direction);
     }
 }

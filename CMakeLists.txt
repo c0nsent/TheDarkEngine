@@ -31,7 +31,8 @@ target_include_directories(stb INTERFACE ${STB_INCLUDE_DIR})
 
 add_executable(
         ${PROJECT_NAME}
-       main.cc
+        camera.cc camera.hpp
+        main.cc
 )
 
 file(GLOB_RECURSE SHADER_FILES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/shaders/*")
