@@ -8,9 +8,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 
-#include <imgui.h>
-#include <imgui-SFML.h>
-namespace ig = ImGui;
+#include <TGUI/TGUI.hpp>
+#include <TGUI/Backend/SFML-OpenGL3.hpp>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -98,6 +97,7 @@ int main()
         .antiAliasingLevel = 4,
         .majorVersion = 4,
         .minorVersion = 6,
+    	.attributeFlags = sf::ContextSettings::Attribute::Core,
     };
 
 
@@ -111,10 +111,10 @@ int main()
     }
 
 	win.setFramerateLimit(60);
-	if (not ig::SFML::Init(win))
-	{
-		std::cerr << "Failed to initialize ImGui";
-	}
+
+	tgui::Gui gui{win};
+
+
 
 
     const int version{ gladLoadGLLoader([] (const char *name) -> void *
@@ -236,6 +236,17 @@ int main()
 	glUniform1i(glGetUniformLocation(shaderProgram.getId(), "texture1"), 0);
 
 
+	auto  textbox = tgui::TextArea::create();
+	textbox->setPosition(100, 50);
+	textbox->setSize(300, 200);
+	textbox->setTextSize(16);
+	gui.add(textbox);
+
+	auto* renderer = textbox->getRenderer();
+	renderer->setBackgroundColor(tgui::Color{20, 25, 35, 230});
+	renderer->setBorderColor(tgui::Color{90, 100, 115});
+	renderer->setTextColor(tgui::Color::White);
+
 
 	tde::Camera cam;
 
@@ -251,7 +262,10 @@ int main()
 
         while (const auto event{ win.pollEvent()})
         {
-        	ig::SFML::ProcessEvent(win, *event);
+        	if (event)
+        	{
+        		gui.handleEvent(event.value());
+        	}
 
             if (event->is<sf::Event::Closed>())
             {
@@ -268,8 +282,6 @@ int main()
             }
         }
 
-		ig::SFML::Update(win, delta.restart());
-		ig::ShowDemoWindow();
 
     	glClearColor(0.2f, 0.3f, 0.3f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -298,6 +310,8 @@ int main()
     	glBindTexture(GL_TEXTURE_2D, obamaTexture);
 
     	glBindVertexArray(vao);
+
+
     	for (u32 i{0}; i < 10; i++)
     	{
     		auto model = glm::translate(glm::mat4{1.f}, cubePositions[i]);
@@ -308,10 +322,12 @@ int main()
     		glDrawArrays(GL_TRIANGLES, 0, 36);
     	}
 
-    	glow::Error::printIfError();
+		gui.draw();
 
-		ig::SFML::Render(win);
-        win.display();
+
+		glow::Error::printIfError();
+
+		win.display();
     }
 
 	glDeleteProgram(shaderProgram.getId());

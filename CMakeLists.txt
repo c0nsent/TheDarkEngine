@@ -15,9 +15,11 @@ find_package(
         System
 )
 
+find_package(TGUI REQUIRED)
+
 add_subdirectory(third-party/glad)
 add_subdirectory(glow)
-
+#[[
 
 include(FetchContent)
 
@@ -51,13 +53,13 @@ set(IMGUI_SFML_FIND_SFML OFF CACHE BOOL
 
 FetchContent_Declare(
         imgui_sfml
-        GIT_REPOSITORY https://github.com/SFML/imgui-sfml.git
-        GIT_TAG v3.0
+        GIT_REPOSITORY https://github.com/c0nsent/imgui-sfml
+        #GIT_TAG v3.0
         SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third-party/imgui-sfml
         GIT_SHALLOW TRUE
 )
 
-FetchContent_MakeAvailable(imgui_sfml)
+FetchContent_MakeAvailable(imgui_sfml)]]
 
 find_path(STB_INCLUDE_DIR
         NAMES stb_image.h
@@ -105,8 +107,8 @@ add_dependencies(${PROJECT_NAME} copy_textures)
 target_link_libraries(${PROJECT_NAME}
         SFML::System
         SFML::Graphics
-        ImGui-SFML::ImGui-SFML
         glad
         glow
         glm::glm
+        TGUI::TGUI
 )
