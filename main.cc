@@ -89,42 +89,73 @@ static void setMatrixValue(const glow::ShaderProgram &sp, const char *matrixName
 }
 
 
+auto setupGui(tgui::Gui &gui) -> void
+{
+	gui.setTextSize(12);
+	gui.setOpacity(0.8);
+
+	const tgui::Font font{ "/usr/share/fonts/TTF/JetBrainsMonoNerdFontMono-Regular.ttf" };
+	gui.setFont(font);
+
+	//tgui::Font::setGlobalFont(font);
+}
+
+
+
 int main()
 {
-    constexpr sf::ContextSettings settings {
-        .depthBits = 24,
-        .stencilBits = 8,
-        .antiAliasingLevel = 4,
-        .majorVersion = 4,
-        .minorVersion = 6,
-    	.attributeFlags = sf::ContextSettings::Attribute::Core,
-    };
+	constexpr sf::ContextSettings settings {
+		.depthBits = 24,
+		.stencilBits = 8,
+		.antiAliasingLevel = 4,
+		.majorVersion = 4,
+		.minorVersion = 6,
+		.attributeFlags = sf::ContextSettings::Attribute::Core,
+	};
 
 
-    sf::Window win{ sf::VideoMode{{WIDTH, HEIGHT}}, TITLE, sf::Style::Default, sf::State::Windowed, settings };
-    win.setVerticalSyncEnabled(true);
+	sf::Window win{ sf::VideoMode{{WIDTH, HEIGHT}}, TITLE, sf::Style::Default, sf::State::Windowed, settings };
+	win.setVerticalSyncEnabled(true);
 
-    if (not win.setActive())
-    {
-        std::cerr << "Failed to set current window as a target for rendering\n";
-        return EXIT_FAILURE;
-    }
+	if (not win.setActive())
+	{
+		std::cerr << "Failed to set current window as a target for rendering\n";
+		return EXIT_FAILURE;
+	}
 
 	win.setFramerateLimit(60);
 
-    const i32 version{ gladLoadGLLoader([] (const char *name)
-    {
-        return reinterpret_cast<void *>(sf::Context::getFunction(name));
-    })};
-    if (not version)
-    {
-        std::cerr << "Failed to load OpenGL functions\n";
-        return EXIT_FAILURE;
-    }
+	const i32 version{ gladLoadGLLoader([] (const char *name)
+	{
+		return reinterpret_cast<void *>(sf::Context::getFunction(name));
+	})};
+	if (not version)
+	{
+		std::cerr << "Failed to load OpenGL functions\n";
+		return EXIT_FAILURE;
+	}
 
-    glEnable(GL_DEPTH_TEST);
+	glEnable(GL_DEPTH_TEST);
 
-    tgui::Gui gui{win};
+	tgui::Gui gui{ win };
+	setupGui(gui);
+
+	auto layout{ tgui::VerticalLayout::create() };
+	layout->setPosition(20, 20);
+	layout->setSize(200, 100);
+	const auto pos{sf::Mouse::getPosition()};
+	const auto label{ std::format("x: {} y: {}", pos.x, pos.y) };
+	auto mousePosLabel{ tgui::Label::create(label) };
+
+	auto labelStyle{ mousePosLabel->getRenderer() };
+	labelStyle->setBackgroundColor({28, 29, 31});
+	labelStyle->setTextColor({210, 219, 222});
+
+	layout->add(mousePosLabel);
+
+	gui.add(layout);
+
+
 
 	const glow::ShaderProgram shaderProgram{std::make_tuple(
 		glow::VertexShader{"shaders/shader.vert"},
@@ -231,25 +262,6 @@ int main()
 	shaderProgram.use();
 	glUniform1i(glGetUniformLocation(shaderProgram.getId(), "texture1"), 0);
 
-
-	auto  textbox = tgui::TextArea::create();
-	textbox->setPosition(100, 50);
-	textbox->setSize(300, 200);
-	textbox->setTextSize(16);
-
-	gui.add(textbox);
-
-    auto slider{ tgui::Slider::create() };
-    slider->setUserData("fasdfas");
-    slider->setValue(4);
-    gui.add(slider);
-
-	auto* renderer = textbox->getRenderer();
-	renderer->setBackgroundColor(tgui::Color{20, 25, 35, 230});
-	renderer->setBorderColor(tgui::Color{90, 100, 115});
-	renderer->setTextColor(tgui::Color::White);
-
-
 	tde::Camera cam;
 
 	sf::Clock clock;
@@ -284,6 +296,9 @@ int main()
             }
         }
 
+
+		const auto label2{ std::format("x: {}, y: {}", sf::Mouse::getPosition().x, sf::Mouse::getPosition().y) };
+		mousePosLabel->setText(label2);
 
     	glClearColor(0.2f, 0.3f, 0.3f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
