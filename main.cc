@@ -10,6 +10,7 @@
 
 #include <TGUI/TGUI.hpp>
 #include <TGUI/Backend/SFML-OpenGL3.hpp>
+#include <TGUI/Widgets/Slider.hpp>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -27,7 +28,6 @@ using namespace glow::basicTypes;
 #include <array>
 #include <iostream>
 #include <chrono>
-#include <algorithm>
 #include <numeric>
 #include <optional>
 
@@ -101,7 +101,7 @@ int main()
     };
 
 
-    sf::RenderWindow win{ sf::VideoMode{{WIDTH, HEIGHT}}, TITLE, sf::Style::Default, sf::State::Windowed, settings };
+    sf::Window win{ sf::VideoMode{{WIDTH, HEIGHT}}, TITLE, sf::Style::Default, sf::State::Windowed, settings };
     win.setVerticalSyncEnabled(true);
 
     if (not win.setActive())
@@ -112,12 +112,7 @@ int main()
 
 	win.setFramerateLimit(60);
 
-	tgui::Gui gui{win};
-
-
-
-
-    const int version{ gladLoadGLLoader([] (const char *name) -> void *
+    const i32 version{ gladLoadGLLoader([] (const char *name)
     {
         return reinterpret_cast<void *>(sf::Context::getFunction(name));
     })};
@@ -129,6 +124,7 @@ int main()
 
     glEnable(GL_DEPTH_TEST);
 
+    tgui::Gui gui{win};
 
 	const glow::ShaderProgram shaderProgram{std::make_tuple(
 		glow::VertexShader{"shaders/shader.vert"},
@@ -240,7 +236,13 @@ int main()
 	textbox->setPosition(100, 50);
 	textbox->setSize(300, 200);
 	textbox->setTextSize(16);
+
 	gui.add(textbox);
+
+    auto slider{ tgui::Slider::create() };
+    slider->setUserData("fasdfas");
+    slider->setValue(4);
+    gui.add(slider);
 
 	auto* renderer = textbox->getRenderer();
 	renderer->setBackgroundColor(tgui::Color{20, 25, 35, 230});
