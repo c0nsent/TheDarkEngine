@@ -89,7 +89,7 @@ static void setMatrixValue(const glow::ShaderProgram &sp, const char *matrixName
 }
 
 
-auto setupGui(tgui::Gui &gui) -> void
+static auto setupGui(tgui::Gui &gui) -> void
 {
 	gui.setTextSize(12);
 	gui.setOpacity(0.8);
@@ -101,6 +101,14 @@ auto setupGui(tgui::Gui &gui) -> void
 }
 
 
+static auto createLayout(tgui::Gui &gui) -> std::shared_ptr<tgui::VerticalLayout>
+{
+    auto layout{ tgui::VerticalLayout::create() };
+    layout->setPosition(20, 20);
+    layout->setSize(200, 100);
+
+    return layout;
+}
 
 int main()
 {
@@ -123,7 +131,7 @@ int main()
 		return EXIT_FAILURE;
 	}
 
-	win.setFramerateLimit(60);
+	win.setFramerateLimit(120);
 
 	const i32 version{ gladLoadGLLoader([] (const char *name)
 	{
@@ -140,22 +148,23 @@ int main()
 	tgui::Gui gui{ win };
 	setupGui(gui);
 
-	auto layout{ tgui::VerticalLayout::create() };
-	layout->setPosition(20, 20);
-	layout->setSize(200, 100);
+    auto layout = createLayout(gui);
+    gui.add(layout);
+
 	const auto pos{sf::Mouse::getPosition()};
 	const auto label{ std::format("x: {} y: {}", pos.x, pos.y) };
 	auto mousePosLabel{ tgui::Label::create(label) };
 
-	auto labelStyle{ mousePosLabel->getRenderer() };
+    auto deltaLabel{ tgui::Label::create( "Delta time: 0") };
+
+	std::shared_ptr<tgui::LabelRenderer> labelStyle{ mousePosLabel->getSharedRenderer() };
 	labelStyle->setBackgroundColor({28, 29, 31});
 	labelStyle->setTextColor({210, 219, 222});
 
+    deltaLabel->setRenderer(labelStyle->getData());
+
 	layout->add(mousePosLabel);
-
-	gui.add(layout);
-
-
+    layout->add(deltaLabel);
 
 	const glow::ShaderProgram shaderProgram{std::make_tuple(
 		glow::VertexShader{"shaders/shader.vert"},
@@ -264,41 +273,44 @@ int main()
 
 	tde::Camera cam;
 
-	sf::Clock clock;
-	sf::Clock delta;
+	sf::Clock deltaClock;
+
+    f32 rotation{};
+
 	while (win.isOpen())
-    {
+	{
+	    const auto delta{ deltaClock.restart()};
 
-    	if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Q))
-    	{
+	    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Q))
+	    {
 
-    	}
+	    }
 
-        while (const auto event{ win.pollEvent()})
-        {
-        	if (event)
-        	{
-        		gui.handleEvent(event.value());
-        	}
+	    while (const auto event{ win.pollEvent()})
+	    {
+	        if (event)
+	        {
+	            gui.handleEvent(event.value());
+	        }
 
-            if (event->is<sf::Event::Closed>())
-            {
-                win.close();
-            }
-            else if (const auto *resized{ event->getIf<sf::Event::Resized>() })
-            {
-                glViewport(
-                	0,
-                	0,
-                	static_cast<i32>(resized->size.x),
-                	static_cast<i32>(resized->size.y)
+	        if (event->is<sf::Event::Closed>())
+	        {
+	            win.close();
+	        }
+	        else if (const auto *resized{ event->getIf<sf::Event::Resized>() })
+	        {
+	            glViewport(
+                    0,
+                    0,
+                    static_cast<i32>(resized->size.x),
+                    static_cast<i32>(resized->size.y)
                 );
-            }
-        }
+	        }
+	    }
 
-
-		const auto label2{ std::format("x: {}, y: {}", sf::Mouse::getPosition().x, sf::Mouse::getPosition().y) };
-		mousePosLabel->setText(label2);
+	    const auto label2{ std::format("x: {}, y: {}", sf::Mouse::getPosition().x, sf::Mouse::getPosition().y) };
+	    mousePosLabel->setText(label2);
+	    deltaLabel->setText(std::format("Delta: {} us", delta.asMicroseconds() ));
 
     	glClearColor(0.2f, 0.3f, 0.3f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -306,9 +318,8 @@ int main()
 		glEnable(GL_DEPTH_TEST);
 		shaderProgram.use();
 
-
     	cam.calcDirection();
-		auto view {cam.calcPosition(clock.getElapsedTime())};
+		auto view {cam.calcPosition(delta)};
 
 		setMatrixValue(shaderProgram, "view", view);
 
@@ -328,12 +339,13 @@ int main()
 
     	glBindVertexArray(vao);
 
-
     	for (u32 i{0}; i < 10; i++)
     	{
     		auto model = glm::translate(glm::mat4{1.f}, cubePositions[i]);
-    		const f32 rotation = (i % 2 == 0) ? 20 * static_cast<f32>(i) : i * (static_cast<f32>(clock.getElapsedTime().asMicroseconds()) / 100000); // здесь была дельта
-    		model = glm::rotate(model, glm::radians(rotation), {1.f, 0.3f, 0.5f});
+
+    	    rotation += delta.asSeconds();
+    		const f32 rotationPos = (i % 2 == 0) ? 20 * static_cast<f32>(i) : static_cast<f32>(i) * rotation;
+    		model = glm::rotate(model, glm::radians(rotationPos), {1.f, 0.3f, 0.5f});
     		setMatrixValue(shaderProgram, "model", model);
 
     		glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -350,6 +362,8 @@ int main()
 	glDeleteProgram(shaderProgram.getId());
 	glDeleteVertexArrays(1, &vao);
 	glDeleteBuffers(1, &vbo);
+
+    //TODO: Некорректно удаляются виджеты в TGUI
 
     return EXIT_SUCCESS;
 }

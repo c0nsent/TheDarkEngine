@@ -16,7 +16,7 @@ namespace tde
 
     auto Camera::calcPosition(const sf::Time delta) -> glm::mat4
     {
-        const f32 camSpeed{ 2.f /* static_cast<f32>(delta.asMicroseconds())/ 10000000.f*/ };
+        const f32 camSpeed{ 2.5f * delta.asSeconds()};
 
         using namespace sf::Keyboard;
 
@@ -50,9 +50,7 @@ namespace tde
         offset *= sensitivity;
 
         m_yaw += offset.x;
-        m_yaw += offset.y;
-
-        m_pitch = std::clamp(m_pitch, -89.f, 89.f);
+        m_pitch = std::clamp(m_pitch - offset.y, -89.f, 89.f);
 
         glm::vec3 direction;
         direction.x = glm::cos(glm::radians(m_yaw)) * glm::cos(glm::radians(m_pitch));

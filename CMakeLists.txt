@@ -19,47 +19,6 @@ find_package(TGUI REQUIRED)
 
 add_subdirectory(third-party/glad)
 add_subdirectory(glow)
-#[[
-
-include(FetchContent)
-
-FetchContent_Declare(
-        imgui
-        GIT_REPOSITORY https://github.com/ocornut/imgui.git
-        GIT_TAG v1.91.9b
-        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third-party/imgui
-        GIT_SHALLOW TRUE
-)
-
-FetchContent_MakeAvailable(imgui)
-
-set(IMGUI_DIR
-        ${CMAKE_CURRENT_SOURCE_DIR}/third-party/imgui
-        CACHE PATH "Dear ImGui source directory"
-        FORCE
-)
-
-
-set(IMGUI_INCLUDE_DIR
-        ${IMGUI_DIR}
-        CACHE PATH "Dear ImGui include directory"
-        FORCE
-)
-
-set(IMGUI_SFML_FIND_SFML OFF CACHE BOOL
-        "Use parent SFML configuration"
-        FORCE
-)
-
-FetchContent_Declare(
-        imgui_sfml
-        GIT_REPOSITORY https://github.com/c0nsent/imgui-sfml
-        #GIT_TAG v3.0
-        SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third-party/imgui-sfml
-        GIT_SHALLOW TRUE
-)
-
-FetchContent_MakeAvailable(imgui_sfml)]]
 
 find_path(STB_INCLUDE_DIR
         NAMES stb_image.h
