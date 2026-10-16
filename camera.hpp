@@ -1,8 +1,9 @@
 #pragma once
 
 #include <glm/glm.hpp>
+
 #include <SFML/System/Time.hpp>
-#include <SFML/System/Vector2.hpp>
+#include <SFML/Window/Event.hpp>
 
 #include "glow/basic-types.hpp"
 
@@ -17,10 +18,21 @@ namespace tde
     public:
 
         Camera() noexcept;
-        auto calcPosition(sf::Time delta) -> glm::mat4;
-        auto calcDirection() -> void;
+
+        auto updateKeysState(const sf::Event::KeyPressed *pressed) -> void;
+        auto updateKeysState(const sf::Event::KeyReleased *released) -> void;
+        auto updateDirection(const sf::Event::MouseMoved *moved) -> void;
+        auto updateFov(const sf::Event::MouseWheelScrolled *scrolled)  noexcept -> void;
+
+        [[nodiscard]] auto getPositionAndDirection(sf::Time delta) -> glm::mat4;
+        [[nodiscard]] auto getFov() const noexcept -> f32;
 
     private:
+
+        bool m_WPressed{ false };
+        bool m_APressed{ false };
+        bool m_SPressed{ false };
+        bool m_DPressed{ false };
 
         glm::vec3 m_camPos{ 0.f, 0.f, 3.f };
         glm::vec3 m_camFront{ 0.0f, 0.0f, -1.f };
@@ -29,6 +41,7 @@ namespace tde
         f32 m_yaw{ -90.f};
         f32 m_pitch{ 0.f };
         glm::vec2 m_lastPos;
-        bool m_firstMouseInput{true};
+
+        f32 m_fov{45.f};
     };
 }

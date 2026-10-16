@@ -10,7 +10,6 @@
 
 #include <TGUI/TGUI.hpp>
 #include <TGUI/Backend/SFML-OpenGL3.hpp>
-#include <TGUI/Widgets/Slider.hpp>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -21,14 +20,13 @@
 #include "glow/shader-program.hpp"
 #include "glow/shader.hpp"
 
-#include "camera.hpp"
-
 using namespace glow::basicTypes;
+
+#include "camera.hpp"
 
 #include <array>
 #include <iostream>
 #include <chrono>
-#include <numeric>
 #include <optional>
 
 
@@ -96,8 +94,6 @@ static auto setupGui(tgui::Gui &gui) -> void
 
 	const tgui::Font font{ "/usr/share/fonts/TTF/JetBrainsMonoNerdFontMono-Regular.ttf" };
 	gui.setFont(font);
-
-	//tgui::Font::setGlobalFont(font);
 }
 
 
@@ -281,23 +277,37 @@ int main()
 	{
 	    const auto delta{ deltaClock.restart()};
 
-	    if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Q))
-	    {
-
-	    }
-
 	    while (const auto event{ win.pollEvent()})
 	    {
 	        if (event)
 	        {
 	            gui.handleEvent(event.value());
 	        }
+	    	if (const auto pressed{ event->getIf<sf::Event::KeyPressed>()})
+	    	{
+	    		cam.updateKeysState(pressed);
+
+	    		if (pressed->code == sf::Keyboard::Key::Escape) win.close();
+	    	}
+	    	if (const auto moved{ event->getIf<sf::Event::MouseMoved>() })
+	    	{
+	    		cam.updateDirection(moved);
+	    	}
+	    	if (const auto released{ event->getIf<sf::Event::KeyReleased>() })
+	    	{
+	    		cam.updateKeysState(released);
+	    	}
+	    	if (const auto scrolled { event->getIf<sf::Event::MouseWheelScrolled>() })
+	    	{
+	    		cam.updateFov(scrolled);
+	    	}
 
 	        if (event->is<sf::Event::Closed>())
 	        {
+	        	std::cerr << "Window has closed\n";
 	            win.close();
 	        }
-	        else if (const auto *resized{ event->getIf<sf::Event::Resized>() })
+	    	if (const auto resized{ event->getIf<sf::Event::Resized>() })
 	        {
 	            glViewport(
                     0,
@@ -315,19 +325,16 @@ int main()
     	glClearColor(0.2f, 0.3f, 0.3f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glEnable(GL_DEPTH_TEST);
 		shaderProgram.use();
 
-    	cam.calcDirection();
-		auto view {cam.calcPosition(delta)};
-
+		const auto view {cam.getPositionAndDirection(delta)};
 		setMatrixValue(shaderProgram, "view", view);
 
     	glow::Error::printIfError();
 
     	const auto perspectiveProjection
     	{ glm::perspective(
-			glm::radians(45.f),
+			glm::radians(cam.getFov()),
 			static_cast<f32>(win.getSize().x)/static_cast<f32>(win.getSize().y),
 			0.1f,
 			100.f
@@ -352,7 +359,6 @@ int main()
     	}
 
 		gui.draw();
-
 
 		glow::Error::printIfError();
 
