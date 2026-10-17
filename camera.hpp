@@ -17,11 +17,11 @@ namespace tde
 
     public:
 
-        Camera() noexcept;
+        Camera() noexcept=default;
 
         auto updateKeysState(const sf::Event::KeyPressed *pressed) -> void;
         auto updateKeysState(const sf::Event::KeyReleased *released) -> void;
-        auto updateDirection(const sf::Event::MouseMoved *moved) -> void;
+        auto updateDirection(const sf::Event::MouseMovedRaw *moved, f32 sensitivity = 0.1f) -> void;
         auto updateFov(const sf::Event::MouseWheelScrolled *scrolled)  noexcept -> void;
 
         [[nodiscard]] auto getPositionAndDirection(sf::Time delta) -> glm::mat4;
@@ -40,7 +40,6 @@ namespace tde
 
         f32 m_yaw{ -90.f};
         f32 m_pitch{ 0.f };
-        glm::vec2 m_lastPos;
 
         f32 m_fov{45.f};
     };

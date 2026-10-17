@@ -1,9 +1,9 @@
 #include "glad/glad.h"
 
+#include <SFML/Window.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Clock.hpp>
 #include <SFML/Window/Event.hpp>
-#include <SFML/Window.hpp>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
@@ -26,14 +26,19 @@ using namespace glow::basicTypes;
 
 #include <array>
 #include <iostream>
-#include <chrono>
 #include <optional>
 
 
-constexpr i32 WIDTH{1920};
-constexpr i32 HEIGHT{1080};
-constexpr auto TITLE{"The Dark Engine"};
+static auto countAvgFrameTime(const sf::Time delta) -> sf::Time
+{
+    static f32 counter{0};
+    static sf::Time totalTime;
 
+    counter++;
+    totalTime += delta;
+
+    return totalTime/counter;
+}
 
 static auto createTexture(const char *path) noexcept -> u32
 {
@@ -106,7 +111,8 @@ static auto createLayout(tgui::Gui &gui) -> std::shared_ptr<tgui::VerticalLayout
     return layout;
 }
 
-int main()
+
+auto main() -> int
 {
 	constexpr sf::ContextSettings settings {
 		.depthBits = 24,
@@ -117,9 +123,13 @@ int main()
 		.attributeFlags = sf::ContextSettings::Attribute::Core,
 	};
 
-
-	sf::Window win{ sf::VideoMode{{WIDTH, HEIGHT}}, TITLE, sf::Style::Default, sf::State::Windowed, settings };
-	win.setVerticalSyncEnabled(true);
+	sf::Window win{
+	    sf::VideoMode{{1920, 1080}},
+	    "The Dark Engine",
+	    sf::Style::Default,
+	    sf::State::Fullscreen,
+	    settings
+	};
 
 	if (not win.setActive())
 	{
@@ -127,7 +137,8 @@ int main()
 		return EXIT_FAILURE;
 	}
 
-	win.setFramerateLimit(120);
+	//win.setFramerateLimit(10000);
+    win.setMouseCursorVisible(false);
 
 	const i32 version{ gladLoadGLLoader([] (const char *name)
 	{
@@ -270,26 +281,25 @@ int main()
 	tde::Camera cam;
 
 	sf::Clock deltaClock;
+    sf::Time avgFrameTime;
 
     f32 rotation{};
 
 	while (win.isOpen())
 	{
 	    const auto delta{ deltaClock.restart()};
+        avgFrameTime = countAvgFrameTime(delta);
 
 	    while (const auto event{ win.pollEvent()})
 	    {
-	        if (event)
-	        {
-	            gui.handleEvent(event.value());
-	        }
-	    	if (const auto pressed{ event->getIf<sf::Event::KeyPressed>()})
-	    	{
+	        gui.handleEvent(*event);
+
+	    	if (const auto pressed{ event->getIf<sf::Event::KeyPressed>()}) {
 	    		cam.updateKeysState(pressed);
 
 	    		if (pressed->code == sf::Keyboard::Key::Escape) win.close();
 	    	}
-	    	if (const auto moved{ event->getIf<sf::Event::MouseMoved>() })
+	    	if (const auto moved{ event->getIf<sf::Event::MouseMovedRaw>() })
 	    	{
 	    		cam.updateDirection(moved);
 	    	}
@@ -318,9 +328,10 @@ int main()
 	        }
 	    }
 
-	    const auto label2{ std::format("x: {}, y: {}", sf::Mouse::getPosition().x, sf::Mouse::getPosition().y) };
-	    mousePosLabel->setText(label2);
-	    deltaLabel->setText(std::format("Delta: {} us", delta.asMicroseconds() ));
+	    deltaLabel->setText(std::format("Frame Time: {} us | Average: {}",
+	            delta.asMicroseconds(),
+	            avgFrameTime.asMicroseconds()
+	    ));
 
     	glClearColor(0.2f, 0.3f, 0.3f, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

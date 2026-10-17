@@ -1,19 +1,12 @@
 #include "camera.hpp"
 
-
 #include <algorithm>
 #include <glm/ext/matrix_transform.hpp>
 #include <SFML/Window/Keyboard.hpp>
-#include <SFML/Window/Mouse.hpp>
 
 
 namespace tde
 {
-    Camera::Camera() noexcept
-        : m_lastPos{ sf::Mouse::getPosition().x, sf::Mouse::getPosition().y }
-    {
-    }
-
     auto Camera::updateKeysState(const sf::Event::KeyPressed *pressed) -> void
     {
         using namespace sf::Keyboard;
@@ -22,18 +15,19 @@ namespace tde
         {
         case Key::W:
             m_WPressed = true;
-            return;
+            break;
 
         case Key::A:
             m_APressed = true;
-            return;
+            break;
 
         case Key::S:
             m_SPressed = true;
-            return;
+            break;
 
         case Key::D:
             m_DPressed = true;
+            break;
         default:
             return;
         }
@@ -47,15 +41,15 @@ namespace tde
         {
         case Key::W:
             m_WPressed = false;
-            return;
+            break;
 
         case Key::A:
             m_APressed = false;
-            return;
+            break;
 
         case Key::S:
             m_SPressed = false;
-            return;
+            break;
 
         case Key::D:
             m_DPressed = false;
@@ -64,23 +58,26 @@ namespace tde
         }
     }
 
-    auto Camera::updateDirection(const sf::Event::MouseMoved *moved) -> void
+    auto Camera::updateDirection(const sf::Event::MouseMovedRaw *moved, const f32 sensitivity) -> void
     {
-        const glm::vec2 current{moved->position.x, moved->position.y};
-
-        auto offset {current - m_lastPos};
-        m_lastPos = current;
-
-        constexpr f32 sensitivity{ 0.1f };
-        offset *= sensitivity;
+        const glm::vec2 offset{
+            static_cast<f32>(moved->delta.x) * sensitivity,
+            static_cast<f32>(moved->delta.y) * sensitivity
+        };
 
         m_yaw += offset.x;
         m_pitch = std::clamp(m_pitch - offset.y, -89.f, 89.f);
 
-        glm::vec3 direction;
-        direction.x = glm::cos(glm::radians(m_yaw)) * glm::cos(glm::radians(m_pitch));
-        direction.y = glm::sin(glm::radians(m_pitch));
-        direction.z = glm::sin(glm::radians(m_yaw)) * glm::cos(glm::radians(m_pitch));
+        const auto yawRad{ glm::radians(m_yaw) };
+        const auto pitchRad { glm::radians(m_pitch) };
+        const auto pitchCos { glm::cos(pitchRad) };
+
+        const glm::vec3 direction {
+            glm::cos(yawRad) * pitchCos,
+            glm::sin(pitchRad),
+            glm::sin(yawRad) * pitchCos
+        };
+
         m_camFront = glm::normalize(direction);
     }
 
@@ -96,27 +93,18 @@ namespace tde
         using namespace sf::Keyboard;
 
         if (m_WPressed)
-        {
             m_camPos += camSpeed * m_camFront;
-        }
         if (m_SPressed)
-        {
             m_camPos -= camSpeed * m_camFront;
-        }
         if (m_APressed)
-        {
             m_camPos -= glm::normalize(glm::cross(m_camFront, m_camUp)) * camSpeed;
-        }
+
         if (m_DPressed)
-        {
             m_camPos += glm::normalize(glm::cross(m_camFront, m_camUp)) * camSpeed;
-        }
+
 
         return glm::lookAt(m_camPos, m_camPos + m_camFront, m_camUp);
     }
 
-    auto Camera::getFov() const noexcept -> f32
-    {
-        return m_fov;
-    }
+    auto Camera::getFov() const noexcept -> f32 { return m_fov; }
 }
