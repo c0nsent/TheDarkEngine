@@ -1,8 +1,9 @@
 #pragma once
 
+#include <glm/glm.hpp>
+
 #include "basic-types.hpp"
 #include "shader.hpp"
-//#include "uniform.hpp"
 
 #include <tuple>
 
@@ -26,19 +27,7 @@ namespace glow
 
 	public:
 
-		/*struct CreateInfo final
-		{
-			VertexShader vertexShader;
-			FragmentShader fragmentShader;
-			GeometryShader geometryShader;
-		};*/
-
-
-
 		explicit ShaderProgram(Shaders &&shaders);
-		//ShaderProgram(const char *vertexPath, const char *fragmentShader);
-
-		//~ShaderProgram();
 
 		ShaderProgram() = delete;
 		ShaderProgram(const ShaderProgram &) = delete;
@@ -56,7 +45,7 @@ namespace glow
 		template<class ShaderType> requires std::derived_from<ShaderType, detail::BaseShader>
 		[[nodiscard]] auto getAttachedShader() const noexcept ->  const ShaderType &;
 
-	    //[[nodiscard]] auto getUniform1f(const char *name) const noexcept -> Uniform1f;
+		auto setMatrix(const char *name, const glm::mat4 &mat) const -> void;
 
 		auto use() const noexcept -> void;
 

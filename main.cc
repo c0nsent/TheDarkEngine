@@ -19,6 +19,7 @@
 #include "glow/error.hpp"
 #include "glow/shader-program.hpp"
 #include "glow/shader.hpp"
+#include "glow/utility.hpp"
 
 using namespace glow::basicTypes;
 
@@ -81,7 +82,7 @@ static auto createTexture(const char *path) noexcept -> u32
 }
 
 
-static void setMatrixValue(const glow::ShaderProgram &sp, const char *matrixName, const glm::mat4 &matrix) noexcept
+/*static void setMatrixValue(const glow::ShaderProgram &sp, const char *matrixName, const glm::mat4 &matrix) noexcept
 {
     glUniformMatrix4fv(
         glGetUniformLocation(sp.getId(), matrixName),
@@ -89,7 +90,7 @@ static void setMatrixValue(const glow::ShaderProgram &sp, const char *matrixName
         GL_FALSE,
         glm::value_ptr(matrix)
     );
-}
+}*/
 
 
 static auto setupGui(tgui::Gui &gui) -> void
@@ -137,7 +138,8 @@ auto main() -> int
 		return EXIT_FAILURE;
 	}
 
-	//win.setFramerateLimit(10000);
+	//win.setIcon()
+
     win.setMouseCursorVisible(false);
 
 	const i32 version{ gladLoadGLLoader([] (const char *name)
@@ -311,7 +313,6 @@ auto main() -> int
 	    	{
 	    		cam.updateFov(scrolled);
 	    	}
-
 	        if (event->is<sf::Event::Closed>())
 	        {
 	        	std::cerr << "Window has closed\n";
@@ -319,12 +320,7 @@ auto main() -> int
 	        }
 	    	if (const auto resized{ event->getIf<sf::Event::Resized>() })
 	        {
-	            glViewport(
-                    0,
-                    0,
-                    static_cast<i32>(resized->size.x),
-                    static_cast<i32>(resized->size.y)
-                );
+	    		glow::viewport(resized->size);
 	        }
 	    }
 
@@ -338,8 +334,7 @@ auto main() -> int
 
 		shaderProgram.use();
 
-		const auto view {cam.getPositionAndDirection(delta)};
-		setMatrixValue(shaderProgram, "view", view);
+		shaderProgram.setMatrix("view", cam.getPositionAndDirection(delta));
 
     	glow::Error::printIfError();
 
@@ -350,7 +345,7 @@ auto main() -> int
 			0.1f,
 			100.f
 		)};
-    	setMatrixValue(shaderProgram, "projection", perspectiveProjection);
+		shaderProgram.setMatrix("projection", perspectiveProjection);
 
     	glActiveTexture(GL_TEXTURE0);
     	glBindTexture(GL_TEXTURE_2D, obamaTexture);
@@ -364,7 +359,7 @@ auto main() -> int
     	    rotation += delta.asSeconds();
     		const f32 rotationPos = (i % 2 == 0) ? 20 * static_cast<f32>(i) : static_cast<f32>(i) * rotation;
     		model = glm::rotate(model, glm::radians(rotationPos), {1.f, 0.3f, 0.5f});
-    		setMatrixValue(shaderProgram, "model", model);
+    		shaderProgram.setMatrix("model", model);
 
     		glDrawArrays(GL_TRIANGLES, 0, 36);
     	}

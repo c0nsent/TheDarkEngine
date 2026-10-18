@@ -2,10 +2,11 @@
 
 #include <glad/glad.h>
 
+#include <glm/gtc/type_ptr.hpp>
+
 #include <stdexcept>
 #include <utility>
 
-//#include "uniform.hpp"
 
 
 namespace glow
@@ -94,12 +95,15 @@ namespace glow
 		return std::get<ShaderType>(m_shaders);
 	}
 
-
-    /*auto ShaderProgram::getUniform1f(const char *name) const noexcept -> Uniform1f
-	{
-	    return Uniform1f{m_id, name};
-	}*/
-
+    auto ShaderProgram::setMatrix(const char* name, const glm::mat4& mat) const -> void
+    {
+		glUniformMatrix4fv(
+			glGetUniformLocation(this->m_id, name),
+			1,
+			GL_FALSE,
+			glm::value_ptr(mat)
+		);
+    }
 
     auto ShaderProgram::use() const noexcept -> void
 	{

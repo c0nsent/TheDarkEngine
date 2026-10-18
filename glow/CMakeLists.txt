@@ -11,8 +11,10 @@ add_library(glow SHARED
         shader.cc shader.hpp
         shader-program.cc shader-program.hpp
         error.cc error.hpp
+        utility.cc utility.hpp
 )
 
 target_link_libraries(glow PRIVATE
         glad
+        SFML::System
 )
