@@ -4,9 +4,8 @@
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Clock.hpp>
 #include <SFML/Window/Event.hpp>
+#include <SFML/Graphics/Image.hpp>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb/stb_image.h>
 
 #include <TGUI/TGUI.hpp>
 #include <TGUI/Backend/SFML-OpenGL3.hpp>
@@ -28,29 +27,32 @@ using namespace glow::basicTypes;
 #include <array>
 #include <iostream>
 #include <optional>
+#include <filesystem>
 
 
 static auto countAvgFrameTime(const sf::Time delta) -> sf::Time
 {
-    static f32 counter{0};
+    static u64 counter{0};
     static sf::Time totalTime;
 
     counter++;
     totalTime += delta;
 
-    return totalTime/counter;
+    return totalTime / static_cast<f32>(counter);
 }
 
-static auto createTexture(const char *path) noexcept -> u32
+
+static auto createTexture(const std::filesystem::path &path) noexcept -> u32
 {
     u32 textureId{0};
 
-    i32 width, height, nrChannels;
-    u8 *imageData{stbi_load(path, &width, &height, &nrChannels, 0)};
-    if (not imageData)
-    {
-        return textureId;
-    }
+	sf::Image texData;
+	if (!texData.loadFromFile(path))
+	{
+		return textureId;
+	}
+
+	texData.flipVertically();
 
     glGenTextures(1, &textureId);
     glBindTexture(GL_TEXTURE_2D, textureId);
@@ -61,36 +63,21 @@ static auto createTexture(const char *path) noexcept -> u32
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    const i32 format{nrChannels == 3 ? GL_RGB : GL_RGBA};
-
     glTexImage2D(
         GL_TEXTURE_2D,
         0,
-        format,
-        width,
-        height,
+        GL_RGBA, //sf::Image всегда содержит 32 битный RGBA
+        static_cast<i32>(texData.getSize().x),
+        static_cast<i32>(texData.getSize().y),
         0,
-        format,
+        GL_RGBA,
         GL_UNSIGNED_BYTE,
-        imageData
+        texData.getPixelsPtr()
     );
     glGenerateMipmap(GL_TEXTURE_2D);
 
-    stbi_image_free(imageData);
-
     return textureId;
 }
-
-
-/*static void setMatrixValue(const glow::ShaderProgram &sp, const char *matrixName, const glm::mat4 &matrix) noexcept
-{
-    glUniformMatrix4fv(
-        glGetUniformLocation(sp.getId(), matrixName),
-        1,
-        GL_FALSE,
-        glm::value_ptr(matrix)
-    );
-}*/
 
 
 static auto setupGui(tgui::Gui &gui) -> void
@@ -137,8 +124,6 @@ auto main() -> int
 		std::cerr << "Failed to set current window as a target for rendering\n";
 		return EXIT_FAILURE;
 	}
-
-	//win.setIcon()
 
     win.setMouseCursorVisible(false);
 
@@ -238,13 +223,12 @@ auto main() -> int
 		{-1.3f,  1.0f, -1.5f}
 	})};
 
-	stbi_set_flip_vertically_on_load(true);
 
-	const auto obamaTexture{createTexture("textures/obama.png")};
+	const auto obamaTexture{createTexture("assets/obama.png")};
 
 	if (not obamaTexture)
 	{
-		std::cerr << "Failed to load texture: " << "textures/obama.png";
+		std::cerr << "Failed to load texture: " << "assets/obama.png";
 		return EXIT_FAILURE;
 	}
 
@@ -354,7 +338,7 @@ auto main() -> int
 
     	for (u32 i{0}; i < 10; i++)
     	{
-    		auto model = glm::translate(glm::mat4{1.f}, cubePositions[i]);
+    		auto model{ glm::translate(glm::mat4{1.f}, cubePositions[i]) };
 
     	    rotation += delta.asSeconds();
     		const f32 rotationPos = (i % 2 == 0) ? 20 * static_cast<f32>(i) : static_cast<f32>(i) * rotation;

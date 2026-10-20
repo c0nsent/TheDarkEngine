@@ -2,6 +2,7 @@
 
 #include <glad/glad.h>
 
+
 namespace glow {
     auto viewport(const sf::Vector2u& origin, const sf::Vector2u& res) noexcept -> void
     {
@@ -12,6 +13,7 @@ namespace glow {
             static_cast<i32>(res.y)
         );
     }
+
 
     auto viewport(const sf::Vector2u& res) noexcept -> void
     {
