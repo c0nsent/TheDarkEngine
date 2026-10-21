@@ -278,7 +278,7 @@ auto main() -> int
 	    const auto delta{ deltaClock.restart()};
         avgFrameTime = countAvgFrameTime(delta);
 
-	    while (const auto event{ win.pollEvent()})
+	    while (const std::optional event{ win.pollEvent()})
 	    {
 	        gui.handleEvent(*event);
 
