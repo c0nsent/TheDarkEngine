@@ -224,11 +224,11 @@ auto main() -> int
 	})};
 
 
-	const auto obamaTexture{createTexture("assets/obama.png")};
+	const auto texture{createTexture("assets/life-during-wartime.jpg")};
 
-	if (not obamaTexture)
+	if (not texture)
 	{
-		std::cerr << "Failed to load texture: " << "assets/obama.png";
+		std::cerr << "Failed to load texture: " << "assets/life-during-wartime.jpg";
 		return EXIT_FAILURE;
 	}
 
@@ -271,6 +271,8 @@ auto main() -> int
 
     f32 rotation{};
 
+	size_t counter{0};
+
 	while (win.isOpen())
 	{
 	    const auto delta{ deltaClock.restart()};
@@ -287,6 +289,12 @@ auto main() -> int
 	    	}
 	    	if (const auto moved{ event->getIf<sf::Event::MouseMovedRaw>() })
 	    	{
+	    		if (counter < 8)
+	    		{
+	    			counter++;
+	    			continue;
+	    		}
+
 	    		cam.updateDirection(moved);
 	    	}
 	    	if (const auto released{ event->getIf<sf::Event::KeyReleased>() })
@@ -332,7 +340,7 @@ auto main() -> int
 		shaderProgram.setMatrix("projection", perspectiveProjection);
 
     	glActiveTexture(GL_TEXTURE0);
-    	glBindTexture(GL_TEXTURE_2D, obamaTexture);
+    	glBindTexture(GL_TEXTURE_2D, texture);
 
     	glBindVertexArray(vao);
 
