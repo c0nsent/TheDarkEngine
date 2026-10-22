@@ -271,7 +271,6 @@ auto main() -> int
 
     f32 rotation{};
 
-	bool isShouldIgnoreMouseDelta{ true };
 	sf::Vector2i prevMouseDelta;
 	bool firstMouseInput{ true };
 
@@ -298,25 +297,21 @@ auto main() -> int
 	    			prevMouseDelta = moved->delta;
 	    			firstMouseInput = false;
 	    		}
+	    		const sf::Vector2i processedMouseDelta{
+	    			glm::abs(moved->delta.x) / 50,
+					glm::abs(moved->delta.y) / 50
+				};
 
-	    		if ( isShouldIgnoreMouseDelta ) [[unlikely]]
+	    		if ( glm::abs(prevMouseDelta.x) < processedMouseDelta.x
+					or glm::abs(prevMouseDelta.y) < processedMouseDelta.y )
 	    		{
-	    			const sf::Vector2i processedMouseDelta{
-	    				glm::abs(moved->delta.x) / 50,
-	    				glm::abs(moved->delta.y) / 50
-	    			};
+	    			std::cerr << moved->delta.x << ' ' << moved->delta.y << '\n';
 
-	    			if ( glm::abs(prevMouseDelta.x) < processedMouseDelta.x
-	    				or glm::abs(prevMouseDelta.y) < processedMouseDelta.y )
-	    			{
-	    				std::cerr << moved->delta.x << ' ' << moved->delta.y << '\n';
-
-	    				//isShouldIgnoreMouseDelta = false;
-	    				continue;
-	    			}
-
-	    			prevMouseDelta = moved->delta;
+	    			//isShouldIgnoreMouseDelta = false;
+	    			continue;
 	    		}
+
+	    		prevMouseDelta = moved->delta;
 
 	    		cam.updateDirection(moved);
 	    	}
