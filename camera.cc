@@ -7,6 +7,22 @@
 
 namespace tde
 {
+    auto Camera::lookAt(const glm::vec3 &eye, const glm::vec3 &center, const glm::vec3 &up) -> glm::mat4
+    {
+        using namespace glm;
+
+        const auto f{ normalize(center - eye) };
+        const auto r{ normalize(cross(f, up)) };
+        const auto u{ cross(r, f) };
+
+        return {
+            r.x, u.x, -f.x, 0,
+            r.y, u.y, -f.y, 0,
+            r.z, u.z, -f.z, 0,
+            -dot(r, eye), -dot(u, eye), dot(f, eye), 1
+        };
+    }
+
     auto Camera::updateKeysState(const sf::Event::KeyPressed *pressed) -> void
     {
         using namespace sf::Keyboard;
@@ -78,7 +94,7 @@ namespace tde
             glm::sin(yawRad) * pitchCos
         };
 
-        m_camFront = glm::normalize(direction);
+        m_front = glm::normalize(direction);
     }
 
     auto Camera::updateFov(const sf::Event::MouseWheelScrolled *scrolled) noexcept -> void
@@ -93,17 +109,15 @@ namespace tde
         using namespace sf::Keyboard;
 
         if (m_WPressed)
-            m_camPos += camSpeed * m_camFront;
+            m_pos += camSpeed * m_front;
         if (m_SPressed)
-            m_camPos -= camSpeed * m_camFront;
+            m_pos -= camSpeed * m_front;
         if (m_APressed)
-            m_camPos -= glm::normalize(glm::cross(m_camFront, m_camUp)) * camSpeed;
-
+            m_pos -= glm::normalize(glm::cross(m_front, m_up)) * camSpeed;
         if (m_DPressed)
-            m_camPos += glm::normalize(glm::cross(m_camFront, m_camUp)) * camSpeed;
+            m_pos += glm::normalize(glm::cross(m_front, m_up)) * camSpeed;
 
-
-        return glm::lookAt(m_camPos, m_camPos + m_camFront, m_camUp);
+        return lookAt(m_pos, m_pos + m_front, m_up);
     }
 
     auto Camera::getFov() const noexcept -> f32 { return m_fov; }

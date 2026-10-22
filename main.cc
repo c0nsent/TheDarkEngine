@@ -271,8 +271,7 @@ auto main() -> int
 
     f32 rotation{};
 
-	sf::Vector2i prevMouseDelta;
-	bool firstMouseInput{ true };
+	sf::Vector2i prevMouseDelta{0, 0};
 
 	while (win.isOpen())
 	{
@@ -292,25 +291,17 @@ auto main() -> int
 	    	{
 	    		mousePosLabel->setText(std::format("x: {}, y {}", moved->delta.x, moved->delta.y));
 
-	    		if (firstMouseInput) [[unlikely]]
-	    		{
-	    			prevMouseDelta = moved->delta;
-	    			firstMouseInput = false;
-	    		}
 	    		const sf::Vector2i processedMouseDelta{
 	    			glm::abs(moved->delta.x) / 50,
 					glm::abs(moved->delta.y) / 50
 				};
 
 	    		if ( glm::abs(prevMouseDelta.x) < processedMouseDelta.x
-					or glm::abs(prevMouseDelta.y) < processedMouseDelta.y )
+					or glm::abs(prevMouseDelta.y) < processedMouseDelta.y ) [[unlikely]]
 	    		{
 	    			std::cerr << moved->delta.x << ' ' << moved->delta.y << '\n';
-
-	    			//isShouldIgnoreMouseDelta = false;
 	    			continue;
 	    		}
-
 	    		prevMouseDelta = moved->delta;
 
 	    		cam.updateDirection(moved);

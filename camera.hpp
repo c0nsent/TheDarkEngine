@@ -14,6 +14,11 @@ namespace tde
 
     class Camera
     {
+        [[nodiscard]] static auto lookAt(
+            const glm::vec3 &eye,
+            const glm::vec3 &center,
+            const glm::vec3 &up
+        ) -> glm::mat4;
 
     public:
 
@@ -34,9 +39,9 @@ namespace tde
         bool m_SPressed{ false };
         bool m_DPressed{ false };
 
-        glm::vec3 m_camPos{ 0.f, 0.f, 3.f };
-        glm::vec3 m_camFront{ 0.0f, 0.0f, -1.f };
-        glm::vec3 m_camUp{ 0.f , 1.f, 0.f };
+        glm::vec3 m_pos{ 0.f, 0.f, 3.f };
+        glm::vec3 m_front{ 0.0f, 0.0f, -1.f };
+        glm::vec3 m_up{ 0.f , 1.f, 0.f };
 
         f32 m_yaw{ -90.f};
         f32 m_pitch{ 0.f };
