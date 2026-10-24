@@ -100,7 +100,8 @@ static auto createLayout(tgui::Gui &gui) -> std::shared_ptr<tgui::VerticalLayout
     return layout;
 }
 
-glm::vec3 lightPos{ 1.2f, 1.f, 2.f };
+
+static glm::vec3 lightPos{ 1.2f, 1.f, 2.f };
 
 auto main() -> int
 {
@@ -170,53 +171,53 @@ auto main() -> int
 	)};
 
 	const glow::ShaderProgram lightSourceSP{ std::make_tuple(
-		glow::VertexShader{ "shaders/shader.vert" },
+		glow::VertexShader{ "shaders/light-source.vert" },
 		glow::FragmentShader{ "shaders/light-source.frag" },
 		glow::GeometryShader{}
 	)};
 
 	constexpr auto vertices{ std::to_array<f32>({
-	    -0.5f, -0.5f, -0.5f,
-        0.5f, -0.5f, -0.5f,
-        0.5f,  0.5f, -0.5f,
-        0.5f,  0.5f, -0.5f,
-       -0.5f,  0.5f, -0.5f,
-       -0.5f, -0.5f, -0.5f,
+	    -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+         0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+         0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
 
-       -0.5f, -0.5f,  0.5f,
-        0.5f, -0.5f,  0.5f,
-        0.5f,  0.5f,  0.5f,
-        0.5f,  0.5f,  0.5f,
-       -0.5f,  0.5f,  0.5f,
-       -0.5f, -0.5f,  0.5f,
+        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+         0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+         0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+         0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
 
-       -0.5f,  0.5f,  0.5f,
-       -0.5f,  0.5f, -0.5f,
-       -0.5f, -0.5f, -0.5f,
-       -0.5f, -0.5f, -0.5f,
-       -0.5f, -0.5f,  0.5f,
-       -0.5f,  0.5f,  0.5f,
+        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+        -0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+        -0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+        -0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+        -0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
 
-        0.5f,  0.5f,  0.5f,
-        0.5f,  0.5f, -0.5f,
-        0.5f, -0.5f, -0.5f,
-        0.5f, -0.5f, -0.5f,
-        0.5f, -0.5f,  0.5f,
-        0.5f,  0.5f,  0.5f,
+         0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+         0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+         0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+         0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+         0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
 
-       -0.5f, -0.5f, -0.5f,
-        0.5f, -0.5f, -0.5f,
-        0.5f, -0.5f,  0.5f,
-        0.5f, -0.5f,  0.5f,
-       -0.5f, -0.5f,  0.5f,
-       -0.5f, -0.5f, -0.5f,
+        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+         0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+         0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+         0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+        -0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+        -0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
 
-       -0.5f,  0.5f, -0.5f,
-        0.5f,  0.5f, -0.5f,
-        0.5f,  0.5f,  0.5f,
-        0.5f,  0.5f,  0.5f,
-       -0.5f,  0.5f,  0.5f,
-       -0.5f,  0.5f, -0.5f,
+        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+         0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+         0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+        -0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+        -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
 	})};
 
     glow::Error::printIfError();
@@ -245,10 +246,20 @@ auto main() -> int
 		3,
 		GL_FLOAT,
 		false,
-		3 * sizeof(vertices.front()),
+		6 * sizeof(vertices.front()),
 		reinterpret_cast<void *>(0)
 	);
 	glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(
+        1,
+        3,
+        GL_FLOAT,
+        false,
+        6 * sizeof(vertices.front()),
+        reinterpret_cast<void *>(3 * sizeof(vertices.front()))
+    );
+    glEnableVertexAttribArray(1);
 
 	u32 lightVAO;
 	glGenVertexArrays(1, &lightVAO);
@@ -259,7 +270,7 @@ auto main() -> int
 		3,
 		GL_FLOAT,
 		GL_FALSE,
-		3 * sizeof(vertices.front()),
+		6 * sizeof(vertices.front()),
 		reinterpret_cast<void *>(0)
 	);
     glEnableVertexAttribArray(0);
@@ -272,6 +283,8 @@ auto main() -> int
     sf::Time avgFrameTime;
 
 	sf::Vector2i prevMouseDelta{0, 0};
+
+    f32 rotation{};
 
 	while (win.isOpen())
 	{
@@ -337,6 +350,7 @@ auto main() -> int
 
 	    shaderProgram.setVec3("objectColor", {1.f, 0.5f, 0.31f});
 	    shaderProgram.setVec3("lightColor", {1.f, 1.0f, 1.f});
+	    shaderProgram.setVec3("lightPos", lightPos);
 
 	    const auto view{ cam.getPositionAndDirection(delta) };
 	    shaderProgram.setMatrix("view", view);
@@ -351,16 +365,21 @@ auto main() -> int
 	    shaderProgram.setMatrix("projection", perspectiveProjection);
 
 	    auto model{ glm::mat4{1.f} };
-	    shaderProgram.setMatrix("model", model);
+	    rotation += delta.asSeconds() * 10;
+	    model = glm::rotate(model, glm::radians(rotation), {0.f, 1.f, 0.f});
+	    shaderProgram.setMatrix("model",  model);
 
 	    glBindVertexArray(cubeVao);
+
+	    glow::Error::printIfError();
+
 	    glDrawArrays(GL_TRIANGLES, 0, 36);
 
 	    lightSourceSP.use();
 	    lightSourceSP.setMatrix("view", view);
         lightSourceSP.setMatrix("projection", perspectiveProjection);
 
-		model = glm::translate(model, lightPos);
+		model = glm::translate(glm::mat4{1}, lightPos);
 		model = glm::scale(model, glm::vec3(0.2f));
 		lightSourceSP.setMatrix("model", model);
 
