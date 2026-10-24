@@ -121,4 +121,5 @@ namespace tde
     }
 
     auto Camera::getFov() const noexcept -> f32 { return m_fov; }
+    auto Camera::getPos() const noexcept -> glm::vec3 { return m_pos; }
 }

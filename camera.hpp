@@ -31,6 +31,7 @@ namespace tde
 
         [[nodiscard]] auto getPositionAndDirection(sf::Time delta) -> glm::mat4;
         [[nodiscard]] auto getFov() const noexcept -> f32;
+        [[nodiscard]] auto getPos() const noexcept -> glm::vec3;
 
     private:
 

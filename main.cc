@@ -354,6 +354,8 @@ auto main() -> int
 
 	    const auto view{ cam.getPositionAndDirection(delta) };
 	    shaderProgram.setMatrix("view", view);
+		shaderProgram.setVec3("viewPos", cam.getPos());
+		
 
 	    const auto perspectiveProjection
 	    { glm::perspective(
