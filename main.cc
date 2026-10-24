@@ -26,6 +26,7 @@ using namespace glow::basicTypes;
 
 #include <array>
 #include <iostream>
+#include <memory>
 #include <optional>
 #include <filesystem>
 
@@ -99,6 +100,7 @@ static auto createLayout(tgui::Gui &gui) -> std::shared_ptr<tgui::VerticalLayout
     return layout;
 }
 
+glm::vec3 lightPos{ 1.2f, 1.f, 2.f };
 
 auto main() -> int
 {
@@ -151,11 +153,12 @@ auto main() -> int
 
     auto deltaLabel{ tgui::Label::create( "Delta time: 0") };
 
-	std::shared_ptr<tgui::LabelRenderer> labelStyle{ mousePosLabel->getSharedRenderer() };
-	labelStyle->setBackgroundColor({28, 29, 31});
-	labelStyle->setTextColor({210, 219, 222});
+	auto renderer{ std::make_shared<tgui::LabelRenderer>( )};
+	renderer.get()->setBackgroundColor({28, 29, 31});
+	renderer.get()->setTextColor({210, 219, 222});
 
-    deltaLabel->setRenderer(labelStyle->getData());
+	mousePosLabel->setRenderer(renderer.get()->getData());
+    deltaLabel->setRenderer(renderer.get()->getData());
 
 	layout->add(mousePosLabel);
     layout->add(deltaLabel);
@@ -166,71 +169,55 @@ auto main() -> int
 		glow::GeometryShader{}
 	)};
 
+	const glow::ShaderProgram lightSourceSP{ std::make_tuple(
+		glow::VertexShader{ "shaders/shader.vert" },
+		glow::FragmentShader{ "shaders/light-source.frag" },
+		glow::GeometryShader{}
+	)};
+
 	constexpr auto vertices{ std::to_array<f32>({
-	    -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-        0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-        0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-        0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-       -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-       -0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+	    -0.5f, -0.5f, -0.5f,
+        0.5f, -0.5f, -0.5f,
+        0.5f,  0.5f, -0.5f,
+        0.5f,  0.5f, -0.5f,
+       -0.5f,  0.5f, -0.5f,
+       -0.5f, -0.5f, -0.5f,
 
-       -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-        0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-        0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-        0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-       -0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-       -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+       -0.5f, -0.5f,  0.5f,
+        0.5f, -0.5f,  0.5f,
+        0.5f,  0.5f,  0.5f,
+        0.5f,  0.5f,  0.5f,
+       -0.5f,  0.5f,  0.5f,
+       -0.5f, -0.5f,  0.5f,
 
-       -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-       -0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-       -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-       -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-       -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-       -0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+       -0.5f,  0.5f,  0.5f,
+       -0.5f,  0.5f, -0.5f,
+       -0.5f, -0.5f, -0.5f,
+       -0.5f, -0.5f, -0.5f,
+       -0.5f, -0.5f,  0.5f,
+       -0.5f,  0.5f,  0.5f,
 
-        0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-        0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-        0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-        0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-        0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-        0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+        0.5f,  0.5f,  0.5f,
+        0.5f,  0.5f, -0.5f,
+        0.5f, -0.5f, -0.5f,
+        0.5f, -0.5f, -0.5f,
+        0.5f, -0.5f,  0.5f,
+        0.5f,  0.5f,  0.5f,
 
-       -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-        0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-        0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-        0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-       -0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-       -0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+       -0.5f, -0.5f, -0.5f,
+        0.5f, -0.5f, -0.5f,
+        0.5f, -0.5f,  0.5f,
+        0.5f, -0.5f,  0.5f,  
+       -0.5f, -0.5f,  0.5f,
+       -0.5f, -0.5f, -0.5f,
 
-       -0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-        0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-        0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-        0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-       -0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-       -0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+       -0.5f,  0.5f, -0.5f,
+        0.5f,  0.5f, -0.5f,
+        0.5f,  0.5f,  0.5f,
+        0.5f,  0.5f,  0.5f,
+       -0.5f,  0.5f,  0.5f,
+       -0.5f,  0.5f, -0.5f,
 	})};
-
-    constexpr auto cubePositions { std::to_array<glm::vec3>({
-		{ 0.0f,  0.0f,  0.0f},
-		{ 2.0f,  5.0f, -15.0f},
-		{-1.5f, -2.2f, -2.5f},
-		{-3.8f, -2.0f, -12.3f},
-		{2.4f, -0.4f, -3.5f},
-		{-1.7f,  3.0f, -7.5f},
-		{ 1.3f, -2.0f, -2.5f},
-		{1.5f,  2.0f, -2.5f},
-		{ 1.5f,  0.2f, -1.5f},
-		{-1.3f,  1.0f, -1.5f}
-	})};
-
-
-	const auto texture{createTexture("assets/life-during-wartime.jpg")};
-
-	if (not texture)
-	{
-		std::cerr << "Failed to load texture: " << "assets/life-during-wartime.jpg";
-		return EXIT_FAILURE;
-	}
 
     glow::Error::printIfError();
 
@@ -249,20 +236,34 @@ auto main() -> int
 
     glow::Error::printIfError();
 
-    glow::Error::printIfError();
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, false, 5 * sizeof(vertices.front()), reinterpret_cast<void *>(0));
+	glVertexAttribPointer(
+		0,
+		3,
+		GL_FLOAT,
+		false,
+		5 * sizeof(vertices.front()),
+		reinterpret_cast<void *>(0)
+	);
 	glEnableVertexAttribArray(0);
 
-    glow::Error::printIfError();
-
-	glVertexAttribPointer(1, 2, GL_FLOAT, false, 5 * sizeof(vertices.front()), reinterpret_cast<void*>(3 * sizeof(vertices.front())));
-	glEnableVertexAttribArray(1);
+	u32 lightVAO;
+	glGenVertexArrays(1, &lightVAO);
+	glBindVertexArray(lightVAO);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glVertexAttribPointer(
+		0,
+		3,
+		GL_FLOAT,
+		GL_FALSE,
+		3 * sizeof(vertices.front()),
+		reinterpret_cast<void *>(0)
+	);
 
     glow::Error::printIfError();
 
 	shaderProgram.use();
-	glUniform1i(glGetUniformLocation(shaderProgram.getId(), "texture1"), 0);
+	shaderProgram.setVec3("objectColor", {1.f, 0.5f, 0.31f});
+	shaderProgram.setVec3("lightColor", {1.f, 1.0f, 1.f});
 
 	tde::Camera cam;
 
@@ -348,22 +349,18 @@ auto main() -> int
 		)};
 		shaderProgram.setMatrix("projection", perspectiveProjection);
 
-    	glActiveTexture(GL_TEXTURE0);
-    	glBindTexture(GL_TEXTURE_2D, texture);
-
     	glBindVertexArray(vao);
 
-    	for (u32 i{0}; i < 10; i++)
-    	{
-    		auto model{ glm::translate(glm::mat4{1.f}, cubePositions[i]) };
+    	auto model{ glm::mat4{1.f} };
+    	shaderProgram.setMatrix("model", model);
 
-    	    rotation += delta.asSeconds();
-    		const f32 rotationPos = (i % 2 == 0) ? 20 * static_cast<f32>(i) : static_cast<f32>(i) * rotation;
-    		model = glm::rotate(model, glm::radians(rotationPos), {1.f, 0.3f, 0.5f});
-    		shaderProgram.setMatrix("model", model);
+		model = glm::translate(model, lightPos);
+		model = glm::scale(model, glm::vec3(0.2f));
+		lightSourceSP.setMatrix("model", model);
 
-    		glDrawArrays(GL_TRIANGLES, 0, 36);
-    	}
+
+    	glDrawArrays(GL_TRIANGLES, 0, 36);
+
 
 		gui.draw();
 

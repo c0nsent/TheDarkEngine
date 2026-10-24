@@ -105,6 +105,15 @@ namespace glow
 		);
     }
 
+    auto ShaderProgram::setVec3(const char* name, const glm::vec3& v) const -> void
+    {
+		glUniform3fv(
+			glGetUniformLocation(this->m_id, name),
+			1,
+			glm::value_ptr(v)
+		);
+    }
+
     auto ShaderProgram::use() const noexcept -> void
 	{
 		glUseProgram(m_id);

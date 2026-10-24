@@ -46,6 +46,7 @@ namespace glow
 		[[nodiscard]] auto getAttachedShader() const noexcept ->  const ShaderType &;
 
 		auto setMatrix(const char *name, const glm::mat4 &mat) const -> void;
+		auto setVec3(const char *name, const glm::vec3 &v) const -> void;
 
 		auto use() const noexcept -> void;
 
