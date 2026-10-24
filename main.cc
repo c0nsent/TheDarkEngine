@@ -207,7 +207,7 @@ auto main() -> int
        -0.5f, -0.5f, -0.5f,
         0.5f, -0.5f, -0.5f,
         0.5f, -0.5f,  0.5f,
-        0.5f, -0.5f,  0.5f,  
+        0.5f, -0.5f,  0.5f,
        -0.5f, -0.5f,  0.5f,
        -0.5f, -0.5f, -0.5f,
 
@@ -221,18 +221,22 @@ auto main() -> int
 
     glow::Error::printIfError();
 
-	u32 vbo, vao;
+	u32 vbo, cubeVao;
+    glGenVertexArrays(1, &cubeVao);
 	glGenBuffers(1, &vbo);
-	glGenVertexArrays(1, &vao);
-
     glow::Error::printIfError();
 
-	glBindVertexArray(vao);
+	glBindVertexArray(cubeVao);
 
     glow::Error::printIfError();
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
-	glNamedBufferData(vbo, vertices.size() * sizeof(vertices.front()), vertices.data(), GL_STATIC_DRAW);
+	glNamedBufferData(
+	    vbo,
+	    vertices.size() * sizeof(vertices.front()),
+	    vertices.data(),
+	    GL_STATIC_DRAW
+	);
 
     glow::Error::printIfError();
 
@@ -241,7 +245,7 @@ auto main() -> int
 		3,
 		GL_FLOAT,
 		false,
-		5 * sizeof(vertices.front()),
+		3 * sizeof(vertices.front()),
 		reinterpret_cast<void *>(0)
 	);
 	glEnableVertexAttribArray(0);
@@ -258,19 +262,14 @@ auto main() -> int
 		3 * sizeof(vertices.front()),
 		reinterpret_cast<void *>(0)
 	);
+    glEnableVertexAttribArray(0);
 
     glow::Error::printIfError();
-
-	shaderProgram.use();
-	shaderProgram.setVec3("objectColor", {1.f, 0.5f, 0.31f});
-	shaderProgram.setVec3("lightColor", {1.f, 1.0f, 1.f});
 
 	tde::Camera cam;
 
 	sf::Clock deltaClock;
     sf::Time avgFrameTime;
-
-    f32 rotation{};
 
 	sf::Vector2i prevMouseDelta{0, 0};
 
@@ -331,36 +330,42 @@ auto main() -> int
 	            avgFrameTime.asMicroseconds()
 	    ));
 
-    	glClearColor(0.2f, 0.3f, 0.3f, 1.f);
+    	glClearColor(20.f/ 255, 20.f/255, 20.f/255, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		shaderProgram.use();
 
-		shaderProgram.setMatrix("view", cam.getPositionAndDirection(delta));
+	    shaderProgram.setVec3("objectColor", {1.f, 0.5f, 0.31f});
+	    shaderProgram.setVec3("lightColor", {1.f, 1.0f, 1.f});
 
-    	glow::Error::printIfError();
+	    const auto view{ cam.getPositionAndDirection(delta) };
+	    shaderProgram.setMatrix("view", view);
 
-    	const auto perspectiveProjection
-    	{ glm::perspective(
-			glm::radians(cam.getFov()),
-			static_cast<f32>(win.getSize().x)/static_cast<f32>(win.getSize().y),
-			0.1f,
-			100.f
-		)};
-		shaderProgram.setMatrix("projection", perspectiveProjection);
+	    const auto perspectiveProjection
+	    { glm::perspective(
+            glm::radians(cam.getFov()),
+            static_cast<f32>(win.getSize().x)/static_cast<f32>(win.getSize().y),
+            0.1f,
+            100.f
+        )};
+	    shaderProgram.setMatrix("projection", perspectiveProjection);
 
-    	glBindVertexArray(vao);
+	    auto model{ glm::mat4{1.f} };
+	    shaderProgram.setMatrix("model", model);
 
-    	auto model{ glm::mat4{1.f} };
-    	shaderProgram.setMatrix("model", model);
+	    glBindVertexArray(cubeVao);
+	    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+	    lightSourceSP.use();
+	    lightSourceSP.setMatrix("view", view);
+        lightSourceSP.setMatrix("projection", perspectiveProjection);
 
 		model = glm::translate(model, lightPos);
 		model = glm::scale(model, glm::vec3(0.2f));
 		lightSourceSP.setMatrix("model", model);
 
-
+	    glBindVertexArray(lightVAO);
     	glDrawArrays(GL_TRIANGLES, 0, 36);
-
 
 		gui.draw();
 
@@ -370,10 +375,10 @@ auto main() -> int
     }
 
 	glDeleteProgram(shaderProgram.getId());
-	glDeleteVertexArrays(1, &vao);
+    glDeleteProgram(lightSourceSP.getId());
+	glDeleteVertexArrays(1, &cubeVao);
 	glDeleteBuffers(1, &vbo);
-
-    //TODO: Некорректно удаляются виджеты в TGUI
+    glDeleteVertexArrays(1, &lightVAO);
 
     return EXIT_SUCCESS;
 }
