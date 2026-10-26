@@ -18,14 +18,15 @@ void main()
     vec3 norm = normalize(Normal);
     vec3 lightDir = normalize(lightPos - FragPos);
 
-    float diff = max(dot(norm, lightDir), 0.0f);
+    const float diff = max(dot(norm, lightDir), 0.0f);
+    //const float diff = dot(norm, lightDir);
     vec3 diffuse = diff * lightColor;
 
-    float specularStrength = 0.5f;
+    const float specularStrength = 0.5f;
     vec3 viewDir = normalize(viewPos - FragPos);
     vec3 reflectDir = reflect(-lightDir, norm);
 
-    float spec = pow(max(dot(viewDir, reflectDir), 0.f), 256.f);
+    float spec = pow(max(dot(viewDir, reflectDir), 0.f), 32.f);
     vec3 specular = specularStrength * spec * lightColor;
 
     vec3 result = (ambient + diffuse + specular) * objectColor;

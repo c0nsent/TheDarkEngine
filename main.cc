@@ -1,11 +1,10 @@
 #include "glad/glad.h"
 
 #include <SFML/Window.hpp>
+#include <SFML/Graphics/Image.hpp>
 #include <SFML/Graphics/RenderWindow.hpp>
 #include <SFML/System/Clock.hpp>
 #include <SFML/Window/Event.hpp>
-#include <SFML/Graphics/Image.hpp>
-
 
 #include <TGUI/TGUI.hpp>
 #include <TGUI/Backend/SFML-OpenGL3.hpp>
@@ -15,20 +14,19 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "glow/basic-types.hpp"
+using namespace glow::basicTypes;
 #include "glow/error.hpp"
 #include "glow/shader-program.hpp"
 #include "glow/shader.hpp"
 #include "glow/utility.hpp"
 
-using namespace glow::basicTypes;
-
 #include "camera.hpp"
 
 #include <array>
+#include <filesystem>
 #include <iostream>
 #include <memory>
 #include <optional>
-#include <filesystem>
 
 
 static auto countAvgFrameTime(const sf::Time delta) -> sf::Time
@@ -95,7 +93,11 @@ static auto createLayout(tgui::Gui &gui) -> std::shared_ptr<tgui::VerticalLayout
 {
     auto layout{ tgui::VerticalLayout::create() };
     layout->setPosition(20, 20);
-    layout->setSize(200, 100);
+    //layout->setSize(300, 400);
+    //auto foo { tgui::AutoLayout:: }
+    layout->setAutoLayout(tgui::AutoLayout::Left);
+
+
 
     return layout;
 }
@@ -154,6 +156,8 @@ auto main() -> int
 
     auto deltaLabel{ tgui::Label::create( "Delta time: 0") };
 
+    auto colorPicker{ tgui::ColorPicker::create("Цвет источника света", tgui::Color::White) };
+
 	auto renderer{ std::make_shared<tgui::LabelRenderer>( )};
 	renderer.get()->setBackgroundColor({28, 29, 31});
 	renderer.get()->setTextColor({210, 219, 222});
@@ -161,8 +165,15 @@ auto main() -> int
 	mousePosLabel->setRenderer(renderer.get()->getData());
     deltaLabel->setRenderer(renderer.get()->getData());
 
+    auto colorPickerRenderer{ colorPicker->getRenderer() };
+    colorPickerRenderer->setBackgroundColor(renderer->getBackgroundColor());
+    colorPickerRenderer->setTitleColor(renderer->getTextColor());
+    colorPicker->setHeight(100);
+    colorPicker->setWidth(200);
+
 	layout->add(mousePosLabel);
     layout->add(deltaLabel);
+    layout->add(colorPicker);
 
 	const glow::ShaderProgram shaderProgram{std::make_tuple(
 		glow::VertexShader{"shaders/shader.vert"},
@@ -286,6 +297,8 @@ auto main() -> int
 
     f32 rotation{};
 
+    bool isCursorMode{false};
+
 	while (win.isOpen())
 	{
 	    const auto delta{ deltaClock.restart()};
@@ -296,13 +309,22 @@ auto main() -> int
 	        gui.handleEvent(*event);
 
 	    	if (const auto pressed{ event->getIf<sf::Event::KeyPressed>()}) {
-	    		cam.updateKeysState(pressed);
 
-	    		if (pressed->code == sf::Keyboard::Key::Escape) win.close();
+	    	    using namespace sf::Keyboard;
+
+	    	    cam.updateKeysState(pressed);
+
+	    		if (pressed->code == Key::Escape) win.close();
+
+	    	    if (pressed->code == Key::Tab)
+	    	    {
+	    	        isCursorMode = not isCursorMode;
+	    	        win.setMouseCursorVisible(isCursorMode);
+	    	    }
 	    	}
-	    	if (const auto moved{ event->getIf<sf::Event::MouseMovedRaw>() })
+	    	if (const auto moved{ event->getIf<sf::Event::MouseMovedRaw>()}; moved and not isCursorMode)
 	    	{
-	    		mousePosLabel->setText(std::format("x: {}, y {}", moved->delta.x, moved->delta.y));
+	    	    mousePosLabel->setText(std::format("x: {}, y {}", moved->delta.x, moved->delta.y));
 
 	    		const sf::Vector2i processedMouseDelta{
 	    			glm::abs(moved->delta.x) / 50,
