@@ -84,6 +84,7 @@ static auto setupGui(tgui::Gui &gui) -> void
 	gui.setTextSize(12);
 	gui.setOpacity(0.8);
 
+    gui.setRelativeViewport({0, 0, 0.3f , 1});
 	const tgui::Font font{ "/usr/share/fonts/TTF/JetBrainsMonoNerdFontMono-Regular.ttf" };
 	gui.setFont(font);
 }
@@ -95,7 +96,7 @@ static auto createLayout(tgui::Gui &gui) -> std::shared_ptr<tgui::VerticalLayout
     layout->setPosition(20, 20);
     //layout->setSize(300, 400);
     //auto foo { tgui::AutoLayout:: }
-    layout->setAutoLayout(tgui::AutoLayout::Left);
+    //layout->setAutoLayout(tgui::AutoLayout::Left);
 
 
 
@@ -104,6 +105,7 @@ static auto createLayout(tgui::Gui &gui) -> std::shared_ptr<tgui::VerticalLayout
 
 
 static glm::vec3 lightPos{ 1.2f, 1.f, 2.f };
+static sf::Color lightSourceColor{ sf::Color::White };
 
 auto main() -> int
 {
@@ -170,6 +172,7 @@ auto main() -> int
     colorPickerRenderer->setTitleColor(renderer->getTextColor());
     colorPicker->setHeight(100);
     colorPicker->setWidth(200);
+    colorPicker->setColor( tgui::Color{lightSourceColor} );
 
 	layout->add(mousePosLabel);
     layout->add(deltaLabel);
@@ -181,11 +184,15 @@ auto main() -> int
 		glow::GeometryShader{}
 	)};
 
+    shaderProgram.setColor("lightColor", lightSourceColor);
+
 	const glow::ShaderProgram lightSourceSP{ std::make_tuple(
 		glow::VertexShader{ "shaders/light-source.vert" },
 		glow::FragmentShader{ "shaders/light-source.frag" },
 		glow::GeometryShader{}
 	)};
+
+    lightSourceSP.setColor("lightColor", lightSourceColor);
 
 	constexpr auto vertices{ std::to_array<f32>({
 	    -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
@@ -341,6 +348,11 @@ auto main() -> int
 
 	    		cam.updateDirection(moved);
 	    	}
+	        if (isCursorMode and event->is<sf::Event::MouseMoved>())
+	        {
+	            shaderProgram.setColor("lightColor", lightSourceColor);
+	            lightSourceSP.setColor("lightColor", lightSourceColor);
+	        }
 	    	if (const auto released{ event->getIf<sf::Event::KeyReleased>() })
 	    	{
 	    		cam.updateKeysState(released);
@@ -365,19 +377,17 @@ auto main() -> int
 	            avgFrameTime.asMicroseconds()
 	    ));
 
+	    lightSourceColor = colorPicker->getColor();
+
     	glClearColor(20.f/ 255, 20.f/255, 20.f/255, 1.f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		shaderProgram.use();
-
 	    shaderProgram.setVec3("objectColor", {1.f, 0.5f, 0.31f});
-	    shaderProgram.setVec3("lightColor", {1.f, 1.0f, 1.f});
 	    shaderProgram.setVec3("lightPos", lightPos);
 
 	    const auto view{ cam.getPositionAndDirection(delta) };
 	    shaderProgram.setMatrix("view", view);
 		shaderProgram.setVec3("viewPos", cam.getPos());
-		
 
 	    const auto perspectiveProjection
 	    { glm::perspective(
@@ -399,7 +409,6 @@ auto main() -> int
 
 	    glDrawArrays(GL_TRIANGLES, 0, 36);
 
-	    lightSourceSP.use();
 	    lightSourceSP.setMatrix("view", view);
         lightSourceSP.setMatrix("projection", perspectiveProjection);
 
@@ -417,8 +426,6 @@ auto main() -> int
 		win.display();
     }
 
-	glDeleteProgram(shaderProgram.getId());
-    glDeleteProgram(lightSourceSP.getId());
 	glDeleteVertexArrays(1, &cubeVao);
 	glDeleteBuffers(1, &vbo);
     glDeleteVertexArrays(1, &lightVAO);

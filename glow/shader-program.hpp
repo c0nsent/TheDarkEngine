@@ -2,6 +2,8 @@
 
 #include <glm/glm.hpp>
 
+#include <SFML/Graphics/Color.hpp>
+
 #include "basic-types.hpp"
 #include "shader.hpp"
 
@@ -28,6 +30,7 @@ namespace glow
 	public:
 
 		explicit ShaderProgram(Shaders &&shaders);
+	    ~ShaderProgram() noexcept;
 
 		ShaderProgram() = delete;
 		ShaderProgram(const ShaderProgram &) = delete;
@@ -47,6 +50,7 @@ namespace glow
 
 		auto setMatrix(const char *name, const glm::mat4 &mat) const -> void;
 		auto setVec3(const char *name, const glm::vec3 &v) const -> void;
+        auto setColor(const char *name, const sf::Color &c) const -> void;
 
 		auto use() const noexcept -> void;
 

@@ -42,13 +42,15 @@ namespace glow
 		{
 			throw std::runtime_error{"Failed to link shader program: " + getInfoLog().value_or("No Log")};
 		}
+
+	    this->use();
 	}
 
 
-	/*ShaderProgram::~ShaderProgram()
+	ShaderProgram::~ShaderProgram() noexcept
 	{
-		glDeleteProgram(m_id);
-	}*/
+	    glDeleteProgram(m_id);
+	}
 
 
 	auto ShaderProgram::getId() const noexcept -> u32
@@ -97,6 +99,8 @@ namespace glow
 
     auto ShaderProgram::setMatrix(const char* name, const glm::mat4& mat) const -> void
     {
+	    this->use();
+
 		glUniformMatrix4fv(
 			glGetUniformLocation(this->m_id, name),
 			1,
@@ -107,12 +111,29 @@ namespace glow
 
     auto ShaderProgram::setVec3(const char* name, const glm::vec3& v) const -> void
     {
+	    this->use();
+
 		glUniform3fv(
 			glGetUniformLocation(this->m_id, name),
 			1,
 			glm::value_ptr(v)
 		);
     }
+
+
+    auto ShaderProgram::setColor(const char *name, const sf::Color &c) const -> void
+	{
+	    this->use();
+
+	    const glm::vec3 vec{
+	        static_cast<f32>(c.r) / 255,
+	        static_cast<f32>(c.g) / 255,
+	        static_cast<f32>(c.b) / 255
+	    };
+
+	    this->setVec3(name, vec);
+	}
+
 
     auto ShaderProgram::use() const noexcept -> void
 	{
