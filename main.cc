@@ -13,6 +13,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+
 #include "glow/basic-types.hpp"
 using namespace glow::basicTypes;
 #include "glow/error.hpp"
@@ -98,14 +99,12 @@ static auto createLayout(tgui::Gui &gui) -> std::shared_ptr<tgui::VerticalLayout
     //auto foo { tgui::AutoLayout:: }
     //layout->setAutoLayout(tgui::AutoLayout::Left);
 
-
-
     return layout;
 }
 
-
 static glm::vec3 lightPos{ 1.2f, 1.f, 2.f };
 static sf::Color lightSourceColor{ sf::Color::White };
+
 
 auto main() -> int
 {
@@ -379,8 +378,7 @@ auto main() -> int
 
 	    lightSourceColor = colorPicker->getColor();
 
-    	glClearColor(20.f/ 255, 20.f/255, 20.f/255, 1.f);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glow::clearScreen({20, 20, 20});
 
 	    shaderProgram.setVec3("objectColor", {1.f, 0.5f, 0.31f});
 	    shaderProgram.setVec3("lightPos", lightPos);
@@ -392,7 +390,7 @@ auto main() -> int
 	    const auto perspectiveProjection
 	    { glm::perspective(
             glm::radians(cam.getFov()),
-            static_cast<f32>(win.getSize().x)/static_cast<f32>(win.getSize().y),
+            static_cast<f32>(win.getSize().x) / static_cast<f32>(win.getSize().y),
             0.1f,
             100.f
         )};
@@ -400,7 +398,7 @@ auto main() -> int
 
 	    auto model{ glm::mat4{1.f} };
 	    rotation += delta.asSeconds() * 10;
-	    model = glm::rotate(model, glm::radians(rotation), {0.f, 1.f, 0.f});
+	    //model = glm::rotate(model, glm::radians(rotation), {0.f, 1.f, 0.f});
 	    shaderProgram.setMatrix("model",  model);
 
 	    glBindVertexArray(cubeVao);
@@ -412,8 +410,10 @@ auto main() -> int
 	    lightSourceSP.setMatrix("view", view);
         lightSourceSP.setMatrix("projection", perspectiveProjection);
 
-		model = glm::translate(glm::mat4{1}, lightPos);
+		model = glm::rotate(model, glm::radians(rotation), {0, 1, 0});
+		model = glm::translate(model, lightPos);
 		model = glm::scale(model, glm::vec3(0.2f));
+
 		lightSourceSP.setMatrix("model", model);
 
 	    glBindVertexArray(lightVAO);
