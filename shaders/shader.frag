@@ -13,22 +13,21 @@ in vec3 FragPos;
 void main()
 {
     const float ambientStrength = 0.1f;
-    vec3 ambient = ambientStrength * lightColor;
+    const vec3 ambient = ambientStrength * lightColor;
 
-    vec3 norm = normalize(Normal);
-    vec3 lightDir = normalize(lightPos - FragPos);
+    const vec3 norm = normalize(Normal);
+    const vec3 lightDir = normalize(lightPos - FragPos);
 
     const float diff = max(dot(norm, lightDir), 0.0f);
-    //const float diff = dot(norm, lightDir);
-    vec3 diffuse = diff * lightColor;
+    const vec3 diffuse = diff * lightColor;
 
-    const float specularStrength = 0.5f;
-    vec3 viewDir = normalize(viewPos - FragPos);
-    vec3 reflectDir = reflect(-lightDir, norm);
+    const float specularStrength = 1.f;
+    const vec3 viewDir = normalize(viewPos - FragPos);
+    const vec3 reflectDir = reflect(-lightDir, norm);
 
-    float spec = pow(max(dot(viewDir, reflectDir), 0.f), 32.f);
-    vec3 specular = specularStrength * spec * lightColor;
+    const float spec = pow(max(dot(viewDir, reflectDir), 0.f), 32.f);
+    const vec3 specular = specularStrength * spec * lightColor;
 
-    vec3 result = (ambient + diffuse + specular) * objectColor;
+    const vec3 result = (ambient + diffuse + specular) * objectColor;
     FragColor = vec4(result, 1.0);
 }

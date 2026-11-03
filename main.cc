@@ -102,6 +102,9 @@ static auto createLayout(tgui::Gui &gui) -> std::shared_ptr<tgui::VerticalLayout
     return layout;
 }
 
+
+
+
 static glm::vec3 lightPos{ 1.2f, 1.f, 2.f };
 static sf::Color lightSourceColor{ sf::Color::White };
 
@@ -381,7 +384,6 @@ auto main() -> int
 		glow::clearScreen({20, 20, 20});
 
 	    shaderProgram.setVec3("objectColor", {1.f, 0.5f, 0.31f});
-	    shaderProgram.setVec3("lightPos", lightPos);
 
 	    const auto view{ cam.getPositionAndDirection(delta) };
 	    shaderProgram.setMatrix("view", view);
@@ -397,9 +399,16 @@ auto main() -> int
 	    shaderProgram.setMatrix("projection", perspectiveProjection);
 
 	    auto model{ glm::mat4{1.f} };
-	    rotation += delta.asSeconds() * 10;
-	    //model = glm::rotate(model, glm::radians(rotation), {0.f, 1.f, 0.f});
-	    shaderProgram.setMatrix("model",  model);
+		shaderProgram.setMatrix("model",  model);
+
+		rotation += delta.asSeconds() * 10;
+
+		model = glm::rotate(model, glm::radians(rotation), {0, 1, 0});
+
+		model = glm::translate(model, lightPos);
+		model = glm::scale(model, glm::vec3(0.2f));
+		const glm::vec3 currentLightPos{ model[3] };
+		shaderProgram.setVec3("lightPos", currentLightPos);
 
 	    glBindVertexArray(cubeVao);
 
@@ -409,10 +418,6 @@ auto main() -> int
 
 	    lightSourceSP.setMatrix("view", view);
         lightSourceSP.setMatrix("projection", perspectiveProjection);
-
-		model = glm::rotate(model, glm::radians(rotation), {0, 1, 0});
-		model = glm::translate(model, lightPos);
-		model = glm::scale(model, glm::vec3(0.2f));
 
 		lightSourceSP.setMatrix("model", model);
 
