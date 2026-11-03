@@ -13,7 +13,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-
 #include "glow/basic-types.hpp"
 using namespace glow::basicTypes;
 #include "glow/error.hpp"
@@ -95,37 +94,125 @@ static auto createLayout(tgui::Gui &gui) -> std::shared_ptr<tgui::VerticalLayout
 {
     auto layout{ tgui::VerticalLayout::create() };
     layout->setPosition(20, 20);
-    //layout->setSize(300, 400);
-    //auto foo { tgui::AutoLayout:: }
-    //layout->setAutoLayout(tgui::AutoLayout::Left);
 
     return layout;
 }
 
 
+static void APIENTRY GLDebugMessageCallback(const GLenum source, const GLenum type, const GLuint id,
+                                            const GLenum severity, GLsizei,
+                                            const GLchar *msg, const void *)
+{
+    const char* _source;
+    const char* _type;
+    const char* _severity;
+
+    switch (source) {
+        case GL_DEBUG_SOURCE_API:
+        _source = "API";
+        break;
+
+        case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
+        _source = "WINDOW SYSTEM";
+        break;
+
+        case GL_DEBUG_SOURCE_SHADER_COMPILER:
+        _source = "SHADER COMPILER";
+        break;
+
+        case GL_DEBUG_SOURCE_THIRD_PARTY:
+        _source = "THIRD PARTY";
+        break;
+
+        case GL_DEBUG_SOURCE_APPLICATION:
+        _source = "APPLICATION";
+        break;
+
+        case GL_DEBUG_SOURCE_OTHER:
+    	_source = "OTHER";
+    	break;
+
+    	default:
+        _source = "UNKNOWN";
+    }
+
+    switch (type) {
+        case GL_DEBUG_TYPE_ERROR:
+        _type = "ERROR";
+        break;
+
+        case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
+        _type = "DEPRECATED BEHAVIOR";
+        break;
+
+        case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
+        _type = "UNDEFINED BEHAVIOR";
+        break;
+
+        case GL_DEBUG_TYPE_PORTABILITY:
+        _type = "PORTABILITY";
+        break;
+
+        case GL_DEBUG_TYPE_PERFORMANCE:
+        _type = "PERFORMANCE";
+        break;
+
+        case GL_DEBUG_TYPE_OTHER:
+        _type = "OTHER";
+        break;
+
+        case GL_DEBUG_TYPE_MARKER:
+        _type = "MARKER";
+        break;
+
+        default:
+        _type = "UNKNOWN";
+    }
+
+    switch (severity) {
+        case GL_DEBUG_SEVERITY_HIGH:
+        _severity = "HIGH";
+        break;
+
+        case GL_DEBUG_SEVERITY_MEDIUM:
+        _severity = "MEDIUM";
+        break;
+
+        case GL_DEBUG_SEVERITY_LOW:
+        _severity = "LOW";
+        break;
+
+        case GL_DEBUG_SEVERITY_NOTIFICATION:
+        _severity = "NOTIFICATION";
+        break;
+
+        default:
+        _severity = "UNKNOWN";
+    }
+
+    printf("%d: %s of %s severity, raised from %s: %s\n",
+            id, _type, _severity, _source, msg);
+}
 
 
 static glm::vec3 lightPos{ 1.2f, 1.f, 2.f };
 static sf::Color lightSourceColor{ sf::Color::White };
 
-
 auto main() -> int
 {
-	constexpr sf::ContextSettings settings {
-		.depthBits = 24,
-		.stencilBits = 8,
-		.antiAliasingLevel = 4,
-		.majorVersion = 4,
-		.minorVersion = 6,
-		.attributeFlags = sf::ContextSettings::Attribute::Core,
-	};
-
 	sf::Window win{
 	    sf::VideoMode{{1920, 1080}},
 	    "The Dark Engine",
 	    sf::Style::Default,
 	    sf::State::Fullscreen,
-	    settings
+	    {
+	    	.depthBits = 24,
+			.stencilBits = 8,
+			.antiAliasingLevel = 4,
+			.majorVersion = 4,
+			.minorVersion = 6,
+			.attributeFlags = sf::ContextSettings::Attribute::Core,
+	    }
 	};
 
 	if (not win.setActive())
@@ -147,6 +234,9 @@ auto main() -> int
 	}
 
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_DEBUG_OUTPUT);
+	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+	glDebugMessageCallback(GLDebugMessageCallback, nullptr);
 
 	tgui::Gui gui{ win };
 	setupGui(gui);
@@ -240,16 +330,11 @@ auto main() -> int
         -0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
 	})};
 
-    glow::Error::printIfError();
-
 	u32 vbo, cubeVao;
     glGenVertexArrays(1, &cubeVao);
 	glGenBuffers(1, &vbo);
-    glow::Error::printIfError();
 
 	glBindVertexArray(cubeVao);
-
-    glow::Error::printIfError();
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
 	glNamedBufferData(
@@ -258,8 +343,6 @@ auto main() -> int
 	    vertices.data(),
 	    GL_STATIC_DRAW
 	);
-
-    glow::Error::printIfError();
 
 	glVertexAttribPointer(
 		0,
@@ -294,8 +377,6 @@ auto main() -> int
 		reinterpret_cast<void *>(0)
 	);
     glEnableVertexAttribArray(0);
-
-    glow::Error::printIfError();
 
 	tde::Camera cam;
 
@@ -412,8 +493,6 @@ auto main() -> int
 
 	    glBindVertexArray(cubeVao);
 
-	    glow::Error::printIfError();
-
 	    glDrawArrays(GL_TRIANGLES, 0, 36);
 
 	    lightSourceSP.setMatrix("view", view);
@@ -425,9 +504,6 @@ auto main() -> int
     	glDrawArrays(GL_TRIANGLES, 0, 36);
 
 		gui.draw();
-
-		glow::Error::printIfError();
-
 		win.display();
     }
 
