@@ -27,6 +27,7 @@ using namespace glow::basicTypes;
 #include <iostream>
 #include <memory>
 #include <optional>
+#include <print>
 
 
 static auto countAvgFrameTime(const sf::Time delta) -> sf::Time
@@ -79,124 +80,166 @@ static auto createTexture(const std::filesystem::path &path) noexcept -> u32
 }
 
 
-static auto setupGui(tgui::Gui &gui) -> void
+static auto createGui(sf::Window &win) -> std::unique_ptr<tgui::Gui>
 {
-	gui.setTextSize(12);
-	gui.setOpacity(0.8);
+	auto gui{ std::make_unique<tgui::Gui>(win) };
 
-    gui.setRelativeViewport({0, 0, 0.3f , 1});
+	gui->setTextSize(12);
+	gui->setOpacity(0.8);
+    gui->setRelativeViewport({0, 0, 0.25f , 1});
 	const tgui::Font font{ "/usr/share/fonts/TTF/JetBrainsMonoNerdFontMono-Regular.ttf" };
-	gui.setFont(font);
+	gui->setFont(font);
+
+	return gui;
 }
 
 
-static auto createLayout(tgui::Gui &gui) -> std::shared_ptr<tgui::VerticalLayout>
+static auto createLayout(tgui::Gui &gui) -> tgui::VerticalLayout::Ptr
 {
     auto layout{ tgui::VerticalLayout::create() };
     layout->setPosition(20, 20);
-
+	gui.add(layout);
     return layout;
 }
 
 
-static void APIENTRY GLDebugMessageCallback(const GLenum source, const GLenum type, const GLuint id,
-                                            const GLenum severity, GLsizei,
-                                            const GLchar *msg, const void *)
+static auto createLabel(const tgui::VerticalLayout::Ptr &layout) -> tgui::Label::Ptr
 {
-    const char* _source;
-    const char* _type;
-    const char* _severity;
+	auto label{ tgui::Label::create() };
+	layout->add(label);
+
+	const auto renderer{ label->getRenderer() };
+	renderer->setBackgroundColor({28, 29, 31});
+	renderer->setTextColor({210, 219, 222});
+
+	return label;
+}
+
+
+static auto createColorPicker(const tgui::VerticalLayout::Ptr &layout, const char *title, const tgui::Color color) -> tgui::ColorPicker::Ptr
+{
+	auto colorPicker{ tgui::ColorPicker::create(title, color) };
+
+	auto colorPickerRenderer{ colorPicker->getRenderer() };
+	colorPickerRenderer->setBackgroundColor({28, 29, 31});
+	colorPickerRenderer->setTitleColor({210, 219, 222});
+	//colorPicker->setHeight(100);
+	//colorPicker->setWidth(200);
+
+	layout->add(colorPicker);
+	return colorPicker;
+}
+
+
+static void GLDebugMessageCallback(
+	const u32 source,
+	const u32 type,
+	const u32 id,
+	const u32 severity,
+	i32,
+	const char *msg,
+	const void *)
+{
+    const char* strSource;
+    const char* strType;
+    const char* strSeverity;
 
     switch (source) {
         case GL_DEBUG_SOURCE_API:
-        _source = "API";
+        strSource = "API";
         break;
 
         case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
-        _source = "WINDOW SYSTEM";
+        strSource = "WINDOW SYSTEM";
         break;
 
         case GL_DEBUG_SOURCE_SHADER_COMPILER:
-        _source = "SHADER COMPILER";
+        strSource = "SHADER COMPILER";
         break;
 
         case GL_DEBUG_SOURCE_THIRD_PARTY:
-        _source = "THIRD PARTY";
+        strSource = "THIRD PARTY";
         break;
 
         case GL_DEBUG_SOURCE_APPLICATION:
-        _source = "APPLICATION";
+        strSource = "APPLICATION";
         break;
 
         case GL_DEBUG_SOURCE_OTHER:
-    	_source = "OTHER";
+    	strSource = "OTHER";
     	break;
 
     	default:
-        _source = "UNKNOWN";
+        strSource = "UNKNOWN";
     }
 
     switch (type) {
         case GL_DEBUG_TYPE_ERROR:
-        _type = "ERROR";
+        strType = "ERROR";
         break;
 
         case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
-        _type = "DEPRECATED BEHAVIOR";
+        strType = "DEPRECATED BEHAVIOR";
         break;
 
         case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
-        _type = "UNDEFINED BEHAVIOR";
+        strType = "UNDEFINED BEHAVIOR";
         break;
 
         case GL_DEBUG_TYPE_PORTABILITY:
-        _type = "PORTABILITY";
+        strType = "PORTABILITY";
         break;
 
         case GL_DEBUG_TYPE_PERFORMANCE:
-        _type = "PERFORMANCE";
+        strType = "PERFORMANCE";
         break;
 
         case GL_DEBUG_TYPE_OTHER:
-        _type = "OTHER";
+        strType = "OTHER";
         break;
 
         case GL_DEBUG_TYPE_MARKER:
-        _type = "MARKER";
+        strType = "MARKER";
         break;
 
         default:
-        _type = "UNKNOWN";
+        strType = "UNKNOWN";
     }
 
     switch (severity) {
         case GL_DEBUG_SEVERITY_HIGH:
-        _severity = "HIGH";
+        strSeverity = "HIGH";
         break;
 
         case GL_DEBUG_SEVERITY_MEDIUM:
-        _severity = "MEDIUM";
+        strSeverity = "MEDIUM";
         break;
 
         case GL_DEBUG_SEVERITY_LOW:
-        _severity = "LOW";
+        strSeverity = "LOW";
         break;
 
         case GL_DEBUG_SEVERITY_NOTIFICATION:
-        _severity = "NOTIFICATION";
+        strSeverity = "NOTIFICATION";
         break;
 
         default:
-        _severity = "UNKNOWN";
+        strSeverity = "UNKNOWN";
     }
 
-    printf("%d: %s of %s severity, raised from %s: %s\n",
-            id, _type, _severity, _source, msg);
+	std::println(
+		"{}: {} of {} severity, raised from {}: {}",
+		id,
+		strType,
+		strSeverity,
+		strSource,
+		msg
+	);
 }
 
 
 static glm::vec3 lightPos{ 1.2f, 1.f, 2.f };
-static sf::Color lightSourceColor{ sf::Color::White };
+static auto lightSourceColor{ sf::Color::White };
 
 auto main() -> int
 {
@@ -238,37 +281,13 @@ auto main() -> int
 	glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
 	glDebugMessageCallback(GLDebugMessageCallback, nullptr);
 
-	tgui::Gui gui{ win };
-	setupGui(gui);
 
-    auto layout = createLayout(gui);
-    gui.add(layout);
+	auto gui{createGui(win)};
 
-	const auto pos{sf::Mouse::getPosition()};
-	const auto label{ std::format("x: {} y: {}", pos.x, pos.y) };
-	auto mousePosLabel{ tgui::Label::create(label) };
-
-    auto deltaLabel{ tgui::Label::create( "Delta time: 0") };
-
-    auto colorPicker{ tgui::ColorPicker::create("Цвет источника света", tgui::Color::White) };
-
-	auto renderer{ std::make_shared<tgui::LabelRenderer>( )};
-	renderer.get()->setBackgroundColor({28, 29, 31});
-	renderer.get()->setTextColor({210, 219, 222});
-
-	mousePosLabel->setRenderer(renderer.get()->getData());
-    deltaLabel->setRenderer(renderer.get()->getData());
-
-    auto colorPickerRenderer{ colorPicker->getRenderer() };
-    colorPickerRenderer->setBackgroundColor(renderer->getBackgroundColor());
-    colorPickerRenderer->setTitleColor(renderer->getTextColor());
-    colorPicker->setHeight(100);
-    colorPicker->setWidth(200);
-    colorPicker->setColor( tgui::Color{lightSourceColor} );
-
-	layout->add(mousePosLabel);
-    layout->add(deltaLabel);
-    layout->add(colorPicker);
+    auto layout{createLayout(*gui)};
+	auto mousePosLabel{ createLabel(layout) };
+    auto deltaLabel{ createLabel(layout) };
+	auto colorPicker{ createColorPicker(layout, "Источник цвета", tgui::Color::White) };
 
 	const glow::ShaderProgram shaderProgram{std::make_tuple(
 		glow::VertexShader{"shaders/shader.vert"},
@@ -388,7 +407,22 @@ auto main() -> int
     f32 rotation{};
 
     bool isCursorMode{false};
+	{
+		auto perspectiveProjection
+		{ glm::perspective(
+			glm::radians(cam.getFov()),
+			static_cast<f32>(win.getSize().x) / static_cast<f32>(win.getSize().y),
+			0.1f,
+			100.f
+		)};
 
+		shaderProgram.setMatrix("projection", perspectiveProjection);
+		lightSourceSP.setMatrix("projection", perspectiveProjection);
+	}
+	{
+		auto model{ glm::mat4{1.f} };
+		shaderProgram.setMatrix("model",  model);
+	}
 	while (win.isOpen())
 	{
 	    const auto delta{ deltaClock.restart()};
@@ -396,7 +430,7 @@ auto main() -> int
 
 	    while (const std::optional event{ win.pollEvent()})
 	    {
-	        gui.handleEvent(*event);
+	        gui->handleEvent(*event);
 
 	    	if (const auto pressed{ event->getIf<sf::Event::KeyPressed>()}) {
 
@@ -443,6 +477,17 @@ auto main() -> int
 	    	if (const auto scrolled { event->getIf<sf::Event::MouseWheelScrolled>() })
 	    	{
 	    		cam.updateFov(scrolled);
+
+	    		auto perspectiveProjection { glm::perspective(
+				glm::radians(cam.getFov()),
+				static_cast<f32>(win.getSize().x) / static_cast<f32>(win.getSize().y),
+				0.1f,
+				100.f
+				)};
+
+	    		shaderProgram.setMatrix("projection", perspectiveProjection);
+	    		lightSourceSP.setMatrix("projection", perspectiveProjection);
+
 	    	}
 	        if (event->is<sf::Event::Closed>())
 	        {
@@ -452,6 +497,16 @@ auto main() -> int
 	    	if (const auto resized{ event->getIf<sf::Event::Resized>() })
 	        {
 	    		glow::viewport(resized->size);
+
+	    		auto perspectiveProjection{ glm::perspective(
+				glm::radians(cam.getFov()),
+				static_cast<f32>(resized->size.x) / static_cast<f32>(resized->size.y),
+				0.1f,
+				100.f
+				)};
+
+	    		shaderProgram.setMatrix("projection", perspectiveProjection);
+	    		lightSourceSP.setMatrix("projection", perspectiveProjection);
 	        }
 	    }
 
@@ -470,21 +525,9 @@ auto main() -> int
 	    shaderProgram.setMatrix("view", view);
 		shaderProgram.setVec3("viewPos", cam.getPos());
 
-	    const auto perspectiveProjection
-	    { glm::perspective(
-            glm::radians(cam.getFov()),
-            static_cast<f32>(win.getSize().x) / static_cast<f32>(win.getSize().y),
-            0.1f,
-            100.f
-        )};
-	    shaderProgram.setMatrix("projection", perspectiveProjection);
-
-	    auto model{ glm::mat4{1.f} };
-		shaderProgram.setMatrix("model",  model);
-
 		rotation += delta.asSeconds() * 10;
 
-		model = glm::rotate(model, glm::radians(rotation), {0, 1, 0});
+		auto model = glm::rotate(glm::mat4{1.f}, glm::radians(rotation), {0, 1, 0});
 
 		model = glm::translate(model, lightPos);
 		model = glm::scale(model, glm::vec3(0.2f));
@@ -496,14 +539,12 @@ auto main() -> int
 	    glDrawArrays(GL_TRIANGLES, 0, 36);
 
 	    lightSourceSP.setMatrix("view", view);
-        lightSourceSP.setMatrix("projection", perspectiveProjection);
-
 		lightSourceSP.setMatrix("model", model);
 
 	    glBindVertexArray(lightVAO);
     	glDrawArrays(GL_TRIANGLES, 0, 36);
 
-		gui.draw();
+		gui->draw();
 		win.display();
     }
 
